@@ -59,27 +59,35 @@ def play_game(model, verbose=False):
         if verbose:
             print(f"{name}'s turn:\n{board}\n\n")
         if board.winner != Board.NEITHER:
-            if verbose:
-                print(f"O wow, {Board.CHARS[board.winner]} won!")
             assert board.winner == turn
             winner = board.winner
             break
+        elif board.is_draw:
+            break
         turn = turn * Board.FLIP_PLAYER
     if verbose:
-        print(f"{player_name(winner)} wins this game.")
-    return actions[winner], board
+        if winner:
+            print(f"{player_name(winner)} wins this game.")
+        else:
+            print("It's a draw.")
+
+    return actions[winner] if winner else None, board
 
 
 def train_through_play(model, num_games=1000, epochs=10):
     winning_actions = []
     games_not_forfeited = 0
+    games_tied = 0
     for i in range(num_games):
         actions, final_board = play_game(model)
-        if final_board.winner != Board.NEITHER:
-            games_not_forfeited += 1
-        winning_actions.extend(actions)
+        if actions is None:
+            games_tied += 1
+        else:
+            winning_actions.extend(actions)
+            if final_board.winner != Board.NEITHER:
+                games_not_forfeited += 1
 
-    avg_actions = len(winning_actions) / num_games
+    avg_actions_per_game = len(winning_actions) / num_games
 
     # Apparently zip() is its own inverse if you use *, which is odd.
     boards, moves = zip(*winning_actions)
@@ -88,8 +96,9 @@ def train_through_play(model, num_games=1000, epochs=10):
 
     model.fit(boards, moves, epochs=epochs)
 
-    print(f"Avg actions/game: {avg_actions}  "
-          f"games not forfeited: {games_not_forfeited}/{num_games}")
+    print(f"Avg actions/game: {avg_actions_per_game}  "
+          f"games not forfeited: {games_not_forfeited}/{num_games}  "
+          f"games tied: {games_tied}/{num_games}")
 
 
 def get_model():
