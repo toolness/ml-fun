@@ -67,16 +67,21 @@ def play_game(model, verbose=False):
         turn = turn * Board.FLIP_PLAYER
     if verbose:
         print(f"{player_name(winner)} wins this game.")
-    return actions[winner]
+    return actions[winner], board
 
 
 def train_through_play(model, num_games=1000):
     winning_actions = []
+    games_not_forfeited = 0
     for i in range(num_games):
-        winning_actions.extend(play_game(model))
+        actions, final_board = play_game(model)
+        if final_board.winner != Board.NEITHER:
+            games_not_forfeited += 1
+        winning_actions.extend(actions)
 
     avg_actions = len(winning_actions) / num_games
-    print(f"Average actions per game: {avg_actions}")
+    print(f"Avg actions/game: {avg_actions}  "
+          f"games not forfeited: {games_not_forfeited}/{num_games}")
 
     # Apparently zip() is its own inverse if you use *, which is odd.
     boards, moves = zip(*winning_actions)
