@@ -22,7 +22,7 @@ class BoardTests(TestCase):
         self.assertEquals(Board(), Board())
 
     def test_neq_works(self):
-        self.assertNotEqual(Board().set(0, 1, Board.X), Board())
+        self.assertNotEqual(Board().with_square(0, 1, Board.X), Board())
 
     def test_array_works(self):
         b = Board()
@@ -35,8 +35,8 @@ class BoardTests(TestCase):
             '---'
         ])
 
-    def test_set_works(self):
-        self.assertBoardEquals(Board().set(0, 1, Board.X), [
+    def test_with_square_works(self):
+        self.assertBoardEquals(Board().with_square(0, 1, Board.X), [
             '-X-',
             '---',
             '---'

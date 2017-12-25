@@ -24,7 +24,7 @@ class Board:
             board = np.zeros((self.SIZE, self.SIZE))
         self.board = board
 
-    def set(self, row, col, val):
+    def with_square(self, row, col, val):
         board = np.copy(self.board)
         board[row][col] = val
         return self.__class__(board)
