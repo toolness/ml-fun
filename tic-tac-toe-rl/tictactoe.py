@@ -50,6 +50,20 @@ class Board:
 
         return self.NEITHER
 
+    @property
+    def array(self):
+        return self.board
+
+    @property
+    def flipped_players(self):
+        return self.__class__(self.board * -1)
+
+    def __eq__(self, other):
+        return np.all(self.board == other.board)
+
+    def __ne__(self, other):
+        return np.any(self.board != other.board)
+
     def __str__(self):
         lines = []
         for row in range(self.SIZE):

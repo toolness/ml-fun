@@ -7,6 +7,27 @@ class BoardTests(TestCase):
     def assertBoardEquals(self, board, lines):
         self.assertEqual(str(board).split('\n'), lines)
 
+    def test_flipped_players_works(self):
+        self.assertBoardEquals(Board.from_string('''
+            XX-
+            -O-
+            ---
+        ''').flipped_players, [
+            'OO-',
+            '-X-',
+            '---',
+        ])
+
+    def test_eq_works(self):
+        self.assertEquals(Board(), Board())
+
+    def test_neq_works(self):
+        self.assertNotEqual(Board().set(0, 1, Board.X), Board())
+
+    def test_array_works(self):
+        b = Board()
+        self.assertTrue(b.board is b.array)
+
     def test_empty_board_works(self):
         self.assertBoardEquals(Board(), [
             '---',
