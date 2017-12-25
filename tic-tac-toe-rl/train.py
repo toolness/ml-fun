@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -125,21 +124,18 @@ def get_model():
     return load_model(str(MODEL_PATH))
 
 
-def main(argv):
+def main():
     model = get_model()
 
-    if argv == ['play']:
-        play_game(model, verbose=True)        
-    else:
-        i = 0
+    i = 0
 
-        while True:
-            i += 1
-            print(f"Playing/training batch {i}. Press CTRL-C to stop.")
-            train_through_play(model)
-            print("Saving model...")
-            model.save(str(MODEL_PATH))
+    while True:
+        i += 1
+        print(f"Playing/training batch {i}. Press CTRL-C to stop.")
+        train_through_play(model)
+        print("Saving model...")
+        model.save(str(MODEL_PATH))
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
