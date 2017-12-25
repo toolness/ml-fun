@@ -18,6 +18,10 @@ class BoardTests(TestCase):
             '---',
         ])
 
+    def test_is_occupied_works(self):
+        self.assertFalse(Board().is_occupied(1, 2))
+        self.assertTrue(Board().with_square(1, 2, Board.X).is_occupied(1, 2))
+
     def test_eq_works(self):
         self.assertEquals(Board(), Board())
 

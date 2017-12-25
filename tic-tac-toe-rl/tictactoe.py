@@ -29,6 +29,9 @@ class Board:
         board[row][col] = val
         return self.__class__(board)
 
+    def is_occupied(self, row, col):
+        return self.board[row][col] != self.NEITHER
+
     @property
     def winner(self):
         row_sums = np.sum(self.board, axis=0)
