@@ -98,6 +98,8 @@ def get_model():
             Activation('relu'),
             Dense(32),
             Activation('relu'),
+            Dense(96),
+            Activation('relu'),
             Dense(Board.SQUARES),
             Activation('softmax'),
         ])
