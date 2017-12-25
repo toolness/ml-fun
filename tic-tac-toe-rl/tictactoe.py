@@ -33,10 +33,8 @@ class Board:
         row_sums = np.sum(self.board, axis=0)
         col_sums = np.sum(self.board, axis=1)
         diag_sums = np.array([
-            np.sum(self.board[i][i]
-                   for i in range(self.SIZE)),
-            np.sum(self.board[self.SIZE - i - 1][i]
-                   for i in range(self.SIZE)),
+            np.sum(np.diagonal(self.board)),
+            np.sum(np.diagonal(np.fliplr(self.board))),
         ])
 
         x_win = self.X * self.SIZE
