@@ -78,7 +78,7 @@ def play_game(model, verbose=False):
 def train_through_play(model, num_games=1000, epochs=10):
     winning_actions = []
     total_turns = 0
-    games_not_forfeited = 0
+    games_forfeited = 0
     games_tied = 0
     for i in range(num_games):
         num_turns, actions, final_board = play_game(model)
@@ -87,8 +87,8 @@ def train_through_play(model, num_games=1000, epochs=10):
             games_tied += 1
         else:
             winning_actions.extend(actions)
-            if final_board.winner != Board.NEITHER:
-                games_not_forfeited += 1
+            if final_board.winner == Board.NEITHER:
+                games_forfeited += 1
 
     avg_turns_per_game = total_turns / num_games
 
@@ -101,7 +101,7 @@ def train_through_play(model, num_games=1000, epochs=10):
         model.fit(boards, moves, epochs=epochs)
 
     print(f"Avg turns/game: {avg_turns_per_game}  "
-          f"games not forfeited: {games_not_forfeited}/{num_games}  "
+          f"games forfeited: {games_forfeited}/{num_games}  "
           f"games tied: {games_tied}/{num_games}")
 
 
