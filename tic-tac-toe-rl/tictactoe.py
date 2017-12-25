@@ -25,6 +25,7 @@ class Board:
         if board is None:
             board = np.zeros((self.SIZE, self.SIZE))
         self.board = board
+        self._winner = None
 
     def with_square(self, row, col, val):
         board = np.copy(self.board)
@@ -34,8 +35,7 @@ class Board:
     def is_occupied(self, row, col):
         return self.board[row][col] != self.NEITHER
 
-    @property
-    def winner(self):
+    def _calc_winner(self):
         row_sums = np.sum(self.board, axis=0)
         col_sums = np.sum(self.board, axis=1)
         diag_sums = np.array([
@@ -55,6 +55,12 @@ class Board:
             return self.O
 
         return self.NEITHER
+
+    @property
+    def winner(self):
+        if self._winner is None:
+            self._winner = self._calc_winner()
+        return self._winner
 
     @property
     def array(self):
