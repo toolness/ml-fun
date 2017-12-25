@@ -88,12 +88,13 @@ def train_through_play(model, num_games=1000, epochs=10):
 
     avg_actions_per_game = len(winning_actions) / num_games
 
-    # Apparently zip() is its own inverse if you use *, which is odd.
-    boards, moves = zip(*winning_actions)
-    boards = np.array(list(boards))
-    moves = np.array(list(moves))
+    if winning_actions:
+        # Apparently zip() is its own inverse if you use *, which is odd.
+        boards, moves = zip(*winning_actions)
+        boards = np.array(list(boards))
+        moves = np.array(list(moves))
 
-    model.fit(boards, moves, epochs=epochs)
+        model.fit(boards, moves, epochs=epochs)
 
     print(f"Avg actions/game: {avg_actions_per_game}  "
           f"games not forfeited: {games_not_forfeited}/{num_games}  "
