@@ -29,7 +29,8 @@ class Board:
         board[row][col] = val
         return self.__class__(board)
 
-    def get_winner(self):
+    @property
+    def winner(self):
         row_sums = np.sum(self.board, axis=0)
         col_sums = np.sum(self.board, axis=1)
         diag_sums = np.array([

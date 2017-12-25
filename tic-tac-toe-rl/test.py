@@ -42,53 +42,53 @@ class BoardTests(TestCase):
             '---'
         ])
 
-    def test_get_winner_works_with_no_win(self):
-        self.assertEqual(Board().get_winner(), Board.NEITHER)
+    def test_winner_works_with_no_win(self):
+        self.assertEqual(Board().winner, Board.NEITHER)
 
         self.assertEqual(Board.from_string('''
             XX-
             ---
             ---
-        ''').get_winner(), Board.NEITHER)
+        ''').winner, Board.NEITHER)
 
         self.assertEqual(Board.from_string('''
             -OX
             ---
             -O-
-        ''').get_winner(), Board.NEITHER)
+        ''').winner, Board.NEITHER)
 
         self.assertEqual(Board.from_string('''
             O--
             -O-
             --X
-        ''').get_winner(), Board.NEITHER)
+        ''').winner, Board.NEITHER)
 
-    def test_get_winner_works_with_row_win(self):
+    def test_winner_works_with_row_win(self):
         self.assertEqual(Board.from_string('''
             XXX
             ---
             ---
-        ''').get_winner(), Board.X)
+        ''').winner, Board.X)
 
-    def test_get_winner_works_with_col_win(self):
+    def test_winner_works_with_col_win(self):
         self.assertEqual(Board.from_string('''
             -O-
             -O-
             -O-
-        ''').get_winner(), Board.O)
+        ''').winner, Board.O)
 
-    def test_get_winner_works_with_diag_win(self):
+    def test_winner_works_with_diag_win(self):
         self.assertEqual(Board.from_string('''
             O--
             -O-
             --O
-        ''').get_winner(), Board.O)
+        ''').winner, Board.O)
 
         self.assertEqual(Board.from_string('''
             --X
             -X-
             X--
-        ''').get_winner(), Board.X)
+        ''').winner, Board.X)
 
     def test_from_string_works(self):
         lines = [
