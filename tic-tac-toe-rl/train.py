@@ -55,6 +55,7 @@ def play_game(model, verbose=False):
             to_categorical([flatten_move(*move)],
                            num_classes=Board.SQUARES)[0],
         ))
+        total_turns += 1
         board = board.with_square(*move, turn)
         if verbose:
             print(f"{name}'s turn:\n{board}\n\n")
@@ -65,7 +66,6 @@ def play_game(model, verbose=False):
         elif board.is_draw:
             break
         turn = turn * Board.FLIP_PLAYER
-        total_turns += 1
     if verbose:
         if winner:
             print(f"{player_name(winner)} wins this game.")
