@@ -18,6 +18,21 @@ class BoardTests(TestCase):
             '---',
         ])
 
+    def test_is_draw_works(self):
+        self.assertFalse(Board().is_draw)
+
+        self.assertTrue(Board.from_string('''
+            XOX
+            OOX
+            OXO
+        ''').is_draw)
+
+        self.assertFalse(Board.from_string('''
+            XOX
+            OOX
+            OXX
+        ''').is_draw)
+
     def test_is_occupied_works(self):
         self.assertFalse(Board().is_occupied(1, 2))
         self.assertTrue(Board().with_square(1, 2, Board.X).is_occupied(1, 2))

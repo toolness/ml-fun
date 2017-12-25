@@ -57,6 +57,11 @@ class Board:
         return self.NEITHER
 
     @property
+    def is_draw(self):
+        return (not np.any(self.board == self.NEITHER) and
+                self.winner == self.NEITHER)
+
+    @property
     def winner(self):
         if self._winner is None:
             self._winner = self._calc_winner()
