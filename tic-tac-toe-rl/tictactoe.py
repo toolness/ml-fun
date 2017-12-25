@@ -6,6 +6,8 @@ class Board:
     O = 1
     NEITHER = 0
 
+    FLIP_PLAYER = -1
+
     SIZE = 3
     SQUARES = SIZE * SIZE
 
@@ -60,7 +62,7 @@ class Board:
 
     @property
     def flipped_players(self):
-        return self.__class__(self.board * -1)
+        return self.__class__(self.board * self.FLIP_PLAYER)
 
     def __eq__(self, other):
         return np.all(self.board == other.board)
