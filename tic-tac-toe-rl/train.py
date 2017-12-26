@@ -23,17 +23,22 @@ def flatten_move(row, col):
 
 def make_move(model, board):
     move_probs = model.predict(board.array.reshape(1, Board.SQUARES))[0]
-    while True:
-        yield unflatten_move(
-            np.random.choice(range(Board.SQUARES), p=move_probs)
-        )
+    unoccupied = board.array.reshape(Board.SQUARES) == Board.NEITHER
+    occupied = board.array.reshape(Board.SQUARES) != Board.NEITHER
+    total_surplus_prob = np.sum(move_probs[occupied])
+    surplus_per_square = total_surplus_prob / np.sum(unoccupied)
+    move_probs[unoccupied] += surplus_per_square
+    move_probs[occupied] = 0
+    return unflatten_move(
+        np.random.choice(range(Board.SQUARES), p=move_probs)
+    )
 
 
 def player_name(turn):
     return f"Player {Board.CHARS[turn]}"
 
 
-def play_game(model, verbose=False, max_move_attempts=5):
+def play_game(model, verbose=False):
     board = Board()
     actions = {
         Board.X: [],
@@ -45,15 +50,8 @@ def play_game(model, verbose=False, max_move_attempts=5):
     while True:
         name = player_name(turn)
         player_board = board if turn == Board.X else board.flipped_players
-        for move, _ in zip(make_move(model, player_board),
-                           range(max_move_attempts)):
-            if not board.is_occupied(*move):
-                break
-        if board.is_occupied(*move):
-            if verbose:
-                print(f"ACK, {name} could not choose a valid move after "
-                      f"{max_move_attempts} tries.")
-            break
+        move = make_move(model, player_board)
+        assert not board.is_occupied(*move)
         actions[turn].append((
             player_board.array.reshape(Board.SQUARES),
             to_categorical([flatten_move(*move)],
