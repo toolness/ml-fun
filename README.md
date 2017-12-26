@@ -7,8 +7,8 @@ Here's what I've got so far:
 
 * [Brooklyn housing price predictions](bk-housing/BkHousing.ipynb) - Experiments with linear regression and gradient descent.
 * [Super simple neural net](super-simple-nn.ipynb) - A ridiculously simple neural net.
-* [Architecture convnet](architecture-convnet/README.md) - A convolutional neural net to recognize different architectural styles in buildings.
-* [Tic-tac-toe RL](tic-tac-toe-rl/README.md) - An attempt to implement a model that learns to play tic tac toe via reinforcement learning.
+* [Architecture convnet](architecture-convnet/) - A convolutional neural net to recognize different architectural styles in buildings.
+* [Tic-tac-toe RL](tic-tac-toe-rl/) - An attempt to implement a model that learns to play tic tac toe via reinforcement learning.
 
 ## Running locally
 
