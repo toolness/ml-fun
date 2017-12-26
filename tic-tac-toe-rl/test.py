@@ -1,6 +1,18 @@
 from unittest import TestCase, main
 
+import numpy as np
+
 from tictactoe import Board
+from util import invert_categorical
+
+
+class UtilTests(TestCase):
+    def test_invert_categorical_works(self):
+        self.assertEqual(list(invert_categorical(np.array([
+            0,
+            0,
+            1,
+        ]))), [0.5, 0.5, 0])
 
 
 class BoardTests(TestCase):

@@ -6,6 +6,7 @@ from keras.layers import Dense, Activation
 from keras.utils import to_categorical
 
 from tictactoe import Board
+from util import invert_categorical
 
 
 MODEL_PATH = Path('model.h5')
@@ -32,10 +33,15 @@ def make_valid_move(model, board):
     move_probs = model.predict(board.array.reshape(1, Board.SQUARES))[0]
     unoccupied = board.array.reshape(Board.SQUARES) == Board.NEITHER
     occupied = board.array.reshape(Board.SQUARES) != Board.NEITHER
+
+    # We want to "spread" the probabilities of the moves to occupied
+    # squares among all the unoccupied squares.
+
     total_surplus_prob = np.sum(move_probs[occupied])
     surplus_per_square = total_surplus_prob / np.sum(unoccupied)
     move_probs[unoccupied] += surplus_per_square
     move_probs[occupied] = 0
+
     return unflatten_move(
         np.random.choice(range(Board.SQUARES), p=move_probs)
     )
@@ -88,9 +94,16 @@ def play_game(model, verbose=False, make_move=make_move):
     if winner:
         loser = winner * Board.FLIP_PLAYER
         final_actions = actions[winner] + [
-            # TODO: Is this a valid training label for categorical
-            # cross-entropy?
-            (array, label * 0) for array, label in actions[loser]
+            # This *should* be OK given that TensorFlow's
+            # documentation for tf.nn.softmax_cross_entropy_with_logits
+            # has the following note:
+            #
+            # "While the classes are mutually exclusive, their probabilities
+            #  need not be. All that is required is that each row of labels
+            #  is a valid probability distribution. If they are not, the
+            #  computation of the gradient will be incorrect."
+            (array, invert_categorical(label))
+            for array, label in actions[loser]
         ]
     else:
         final_actions = []
