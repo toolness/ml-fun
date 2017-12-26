@@ -74,28 +74,38 @@ def play_game(model, verbose=False):
         else:
             print("It's a draw.")
 
-    return total_turns, actions[winner] if winner else [], board
+    if winner:
+        loser = winner * Board.FLIP_PLAYER
+        final_actions = actions[winner] + [
+            # TODO: Is this a valid training label for categorical
+            # cross-entropy?
+            (array, label * 0) for array, label in actions[loser]
+        ]
+    else:
+        final_actions = []
+
+    return total_turns, final_actions, winner, board
 
 
 def train_through_play(model, num_games=1000, epochs=10):
-    winning_actions = []
+    all_actions = []
     total_turns = 0
     games_tied = 0
     games_won = 0
     for i in range(num_games):
-        num_turns, actions, final_board = play_game(model)
+        num_turns, actions, winner, final_board = play_game(model)
         total_turns += num_turns
         if final_board.is_draw:
             games_tied += 1
         elif final_board.winner != Board.NEITHER:
             games_won += 1
-            winning_actions.extend(actions)
+            all_actions.extend(actions)
 
     avg_turns_per_game = total_turns / num_games
 
-    if winning_actions:
+    if all_actions:
         # Apparently zip() is its own inverse if you use *, which is odd.
-        boards, moves = zip(*winning_actions)
+        boards, moves = zip(*all_actions)
         boards = np.array(list(boards))
         moves = np.array(list(moves))
 
