@@ -22,15 +22,21 @@ def flatten_move(row, col):
     return row * Board.SIZE + col
 
 
-def make_move(model, board):
-    move_probs = model.predict(board.array.reshape(1, Board.SQUARES))[0]
+def get_move_probs(model, board, off_policy_prob):
+    if np.random.random_sample() < off_policy_prob:
+        return np.ones(Board.SQUARES) * (1 / Board.SQUARES)
+    return model.predict(board.array.reshape(1, Board.SQUARES))[0]
+
+
+def make_move(model, board, off_policy_prob):
+    move_probs = get_move_probs(model, board, off_policy_prob)
     return unflatten_move(
         np.random.choice(range(Board.SQUARES), p=move_probs)
     )
 
 
-def make_valid_move(model, board):
-    move_probs = model.predict(board.array.reshape(1, Board.SQUARES))[0]
+def make_valid_move(model, board, off_policy_prob):
+    move_probs = get_move_probs(model, board, off_policy_prob)
     unoccupied = board.array.reshape(Board.SQUARES) == Board.NEITHER
     occupied = board.array.reshape(Board.SQUARES) != Board.NEITHER
 
@@ -51,7 +57,8 @@ def player_name(turn):
     return f"Player {Board.CHARS[turn]}"
 
 
-def play_game(model, verbose=False, make_move=make_valid_move):
+def play_game(model, verbose=False, make_move=make_valid_move,
+              off_policy_prob=0):
     board = Board()
     actions = {
         Board.X: [],
@@ -63,7 +70,7 @@ def play_game(model, verbose=False, make_move=make_valid_move):
     while True:
         name = player_name(turn)
         player_board = board if turn == Board.X else board.flipped_players
-        move = make_move(model, player_board)
+        move = make_move(model, player_board, off_policy_prob)
         actions[turn].append((
             player_board.array.reshape(Board.SQUARES),
             to_categorical([flatten_move(*move)],
@@ -111,14 +118,18 @@ def play_game(model, verbose=False, make_move=make_valid_move):
     return total_turns, final_actions, winner, board
 
 
-def train_through_play(model, num_games=1000, epochs=2):
+def train_through_play(model, num_games=1000, epochs=2,
+                       off_policy_prob=0.1):
     all_actions = []
     total_turns = 0
     games_tied = 0
     games_won = 0
     games_forfeited = 0
     for i in range(num_games):
-        num_turns, actions, winner, final_board = play_game(model)
+        num_turns, actions, winner, final_board = play_game(
+            model,
+            off_policy_prob=off_policy_prob,
+        )
         total_turns += num_turns
         if final_board.is_draw:
             games_tied += 1
