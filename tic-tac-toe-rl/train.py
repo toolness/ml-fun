@@ -51,7 +51,7 @@ def player_name(turn):
     return f"Player {Board.CHARS[turn]}"
 
 
-def play_game(model, verbose=False, make_move=make_move):
+def play_game(model, verbose=False, make_move=make_valid_move):
     board = Board()
     actions = {
         Board.X: [],
@@ -111,7 +111,7 @@ def play_game(model, verbose=False, make_move=make_move):
     return total_turns, final_actions, winner, board
 
 
-def train_through_play(model, num_games=1000, epochs=10):
+def train_through_play(model, num_games=1000, epochs=2):
     all_actions = []
     total_turns = 0
     games_tied = 0
