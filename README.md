@@ -7,6 +7,8 @@ Here's what I've got so far:
 
 * [Brooklyn housing price predictions](bk-housing/BkHousing.ipynb) - Experiments with linear regression and gradient descent.
 * [Super simple neural net](super-simple-nn.ipynb) - A ridiculously simple neural net.
+* [Architecture convnet](architecture-convnet/README.md) - A convolutional neural net to recognize different architectural styles in buildings.
+* [Tic-tac-toe RL](tic-tac-toe-rl/README.md) - An attempt to implement a model that learns to play tic tac toe via reinforcement learning.
 
 ## Running locally
 
@@ -18,3 +20,6 @@ source venv/bin/activate
 pip install -r requirements.txt
 jupyter notebook
 ```
+
+In some cases, the experiments aren't in notebooks and don't use
+virutalenvs; see their respective `README.md` files for more details.
