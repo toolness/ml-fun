@@ -23,6 +23,13 @@ def flatten_move(row, col):
 
 def make_move(model, board):
     move_probs = model.predict(board.array.reshape(1, Board.SQUARES))[0]
+    return unflatten_move(
+        np.random.choice(range(Board.SQUARES), p=move_probs)
+    )
+
+
+def make_valid_move(model, board):
+    move_probs = model.predict(board.array.reshape(1, Board.SQUARES))[0]
     unoccupied = board.array.reshape(Board.SQUARES) == Board.NEITHER
     occupied = board.array.reshape(Board.SQUARES) != Board.NEITHER
     total_surplus_prob = np.sum(move_probs[occupied])
@@ -38,7 +45,7 @@ def player_name(turn):
     return f"Player {Board.CHARS[turn]}"
 
 
-def play_game(model, verbose=False):
+def play_game(model, verbose=False, make_move=make_move):
     board = Board()
     actions = {
         Board.X: [],
@@ -51,13 +58,17 @@ def play_game(model, verbose=False):
         name = player_name(turn)
         player_board = board if turn == Board.X else board.flipped_players
         move = make_move(model, player_board)
-        assert not board.is_occupied(*move)
         actions[turn].append((
             player_board.array.reshape(Board.SQUARES),
             to_categorical([flatten_move(*move)],
                            num_classes=Board.SQUARES)[0],
         ))
         total_turns += 1
+        if board.is_occupied(*move):
+            if verbose:
+                print(f"{name} made an invalid move and forfeited.")
+            winner = turn * Board.FLIP_PLAYER
+            break
         board = board.with_square(*move, turn)
         if verbose:
             print(f"{name}'s turn:\n{board}\n\n")
@@ -92,13 +103,17 @@ def train_through_play(model, num_games=1000, epochs=10):
     total_turns = 0
     games_tied = 0
     games_won = 0
+    games_forfeited = 0
     for i in range(num_games):
         num_turns, actions, winner, final_board = play_game(model)
         total_turns += num_turns
         if final_board.is_draw:
             games_tied += 1
-        elif final_board.winner != Board.NEITHER:
-            games_won += 1
+        else:
+            if final_board.winner != Board.NEITHER:
+                games_won += 1
+            else:
+                games_forfeited += 1
             all_actions.extend(actions)
 
     avg_turns_per_game = total_turns / num_games
@@ -112,8 +127,9 @@ def train_through_play(model, num_games=1000, epochs=10):
         model.fit(boards, moves, epochs=epochs)
 
     print(f"Avg turns/game: {avg_turns_per_game}  "
-          f"games won: {games_won}/{num_games}  "
-          f"games tied: {games_tied}/{num_games}")
+          f"won: {games_won}/{num_games}  "
+          f"tied: {games_tied}/{num_games}  "
+          f"forfeit: {games_forfeited}/{num_games}")
 
 
 def get_model():
