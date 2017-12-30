@@ -8,6 +8,8 @@ from typing import Tuple, List, Callable
 
 probability = float
 
+DISCOUNT = 0.99
+
 class Action(IntEnum):
     NORTH = 0
     SOUTH = 1
@@ -89,7 +91,8 @@ class StateValue:
                 action_reward = 0
                 action_probability = self.policy(state, action)
                 for next_state, probability in state.perform(action):
-                    action_reward += probability * self.previous(next_state)
+                    action_reward += (probability * DISCOUNT *
+                                      self.previous(next_state))
                 reward += action_probability * action_reward
 
         return reward
