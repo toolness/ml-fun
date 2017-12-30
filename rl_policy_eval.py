@@ -8,7 +8,7 @@ from typing import Tuple, List, Callable
 
 probability = float
 
-DISCOUNT = 0.99
+DISCOUNT = 0.99999999
 
 class Action(IntEnum):
     NORTH = 0
@@ -118,6 +118,6 @@ class StateValue:
 if __name__ == '__main__':
     sv = StateValue(random_policy)
 
-    for i in range(60):
+    for i in range(100):
         print(f'State-value matrix on iteration {i}:\n{sv}\n')
         sv = sv.next()
