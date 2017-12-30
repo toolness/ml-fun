@@ -85,14 +85,12 @@ class StateValue:
         reward = state.reward
 
         if not state.is_terminal:
-            action_rewards = []
             for action in Action:
                 action_reward = 0
                 action_probability = self.policy(state, action)
                 for next_state, probability in state.perform(action):
                     action_reward += probability * self.previous(next_state)
-                action_rewards.append(action_probability * action_reward)
-            reward += max(*action_rewards)
+                reward += action_probability * action_reward
 
         return reward
 
@@ -117,6 +115,6 @@ class StateValue:
 if __name__ == '__main__':
     sv = StateValue(random_policy)
 
-    for i in range(5):
+    for i in range(60):
         print(f'State-value matrix on iteration {i}:\n{sv}\n')
         sv = sv.next()
