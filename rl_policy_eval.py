@@ -82,6 +82,9 @@ class StateValue:
         if self.previous is None:
             for state in State.all():
                 self.map[state] = 0
+            self.k = 0
+        else:
+            self.k = self.previous.k + 1
 
     def _evaluate(self, state: State) -> float:
         reward = state.reward
@@ -100,6 +103,21 @@ class StateValue:
     def next(self) -> 'StateValue':
         return self.__class__(self.policy, self)
 
+    def iter_until_convergence(self, theta=0.01):
+        sv = self
+
+        while True:
+            yield sv
+            delta = 0
+            old_sv = sv
+            sv = sv.next()
+            for state in State.all():
+                delta = max(delta, abs(old_sv(state) - sv(state)))
+            if delta < theta:
+                break
+
+        yield sv
+
     def __call__(self, state: State) -> float:
         if state not in self.map:
             self.map[state] = self._evaluate(state)
@@ -116,8 +134,5 @@ class StateValue:
 
 
 if __name__ == '__main__':
-    sv = StateValue(random_policy)
-
-    for i in range(100):
-        print(f'State-value matrix on iteration {i}:\n{sv}\n')
-        sv = sv.next()
+    for sv in StateValue(random_policy).iter_until_convergence():
+        print(f'State-value matrix on iteration {sv.k}:\n{sv}\n')
