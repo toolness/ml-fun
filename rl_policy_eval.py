@@ -3,7 +3,7 @@
 
 from collections import namedtuple
 from enum import IntEnum
-from typing import Tuple, List, Callable
+from typing import Tuple, List, Callable, Dict
 
 
 probability = float
@@ -75,10 +75,10 @@ def random_policy(state: State, action: Action) -> probability:
 
 class StateValue:
     def __init__(self, policy: Callable[[State, Action], probability],
-                 previous: 'StateValue' = None):
+                 previous: 'StateValue' = None) -> None:
         self.policy = policy
         self.previous = previous
-        self.map = {}
+        self.map = {}  # type: Dict[State, float]
         if self.previous is None:
             for state in State.all():
                 self.map[state] = 0
