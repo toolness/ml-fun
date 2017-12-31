@@ -3,7 +3,7 @@
 
 from collections import namedtuple
 from enum import IntEnum
-from typing import Tuple, List, Callable, Dict
+from typing import Tuple, List, Callable, Dict, Any
 
 
 probability = float
@@ -69,12 +69,36 @@ class State(namedtuple('State', ['x', 'y'])):
                 yield cls(x=x, y=y)
 
 
+Policy = Callable[[State, Action], probability]
+
+
+BestStateActions = Dict[State, List[Action]]
+
+
 def random_policy(state: State, action: Action) -> probability:
     return 1.0 / len(Action)
 
 
+class BestStateActionsPolicy:
+    def __init__(self, best: BestStateActions) -> None:
+        self.best = best
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, BestStateActionsPolicy):
+            return self.best == other.best
+        return False
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+    def __call__(self, state: State, action: Action) -> probability:
+        if action in self.best[state]:
+            return 1.0 / len(self.best[state])
+        return 0
+
+
 class StateValue:
-    def __init__(self, policy: Callable[[State, Action], probability],
+    def __init__(self, policy: Policy,
                  previous: 'StateValue' = None) -> None:
         self.policy = policy
         self.previous = previous
@@ -102,6 +126,25 @@ class StateValue:
 
     def next(self) -> 'StateValue':
         return self.__class__(self.policy, self)
+
+    def create_improved_policy(self) -> Policy:
+        best_state_actions = {}  # type: BestStateActions
+        for state in State.all():
+            max_reward = float('-inf')
+            action_rewards = {}  # type: Dict[Action, float]
+            for action in Action:
+                action_reward = 0
+                for next_state, prob in state.perform(action):
+                    action_reward += prob * self(next_state)
+                if action_reward > max_reward:
+                    max_reward = action_reward
+                action_rewards[action] = action_reward
+            best_state_actions[state] = [
+                action for action in Action
+                if action_rewards[action] == max_reward
+            ]
+
+        return BestStateActionsPolicy(best_state_actions)
 
     def iter_until_convergence(self, theta=0.01):
         sv = self
@@ -134,5 +177,15 @@ class StateValue:
 
 
 if __name__ == '__main__':
-    for sv in StateValue(random_policy).iter_until_convergence():
-        print(f'State-value matrix on iteration {sv.k}:\n{sv}\n')
+    policy = random_policy
+    i = 1
+    while True:
+        for sv in StateValue(policy).iter_until_convergence():
+            print(f'State-value matrix on iteration {sv.k}:\n{sv}\n')
+        improved_policy = sv.create_improved_policy()
+        if improved_policy == policy:
+            break
+        print(f"Created improved policy #{i}.\n")
+        policy = improved_policy
+        i += 1
+    print("Optimal policy reached.")
