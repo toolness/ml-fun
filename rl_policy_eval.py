@@ -1,14 +1,17 @@
 # This is an attempt to do policy evaluation on the 2D grid world
 # example from Sutton and Barto's Reinforcement Learning textbook.
 
-from collections import namedtuple
 from enum import IntEnum
-from typing import Tuple, List, Callable, Dict, Any
+from typing import Tuple, List, Callable, Dict, Any, NamedTuple
 
 
 probability = float
 
 DISCOUNT = 0.99999999
+
+WIDTH = 4
+
+HEIGHT = 4
 
 class Action(IntEnum):
     NORTH = 0
@@ -17,17 +20,14 @@ class Action(IntEnum):
     WEST = 3
 
 
-PotentialState = namedtuple('PotentialState', ['state', 'probability'])
+class PotentialState(NamedTuple):
+    state: 'State'
+    probability: float
 
 
-class State(namedtuple('State', ['x', 'y'])):
-    __slots__ = ()
-
-    _fields = ('x', 'y')
-
-    WIDTH = 4
-
-    HEIGHT = 4
+class State(NamedTuple):
+    x: int
+    y: int
 
     def perform(self, action: Action) -> List[PotentialState]:
         if action == Action.NORTH:
@@ -35,10 +35,10 @@ class State(namedtuple('State', ['x', 'y'])):
                                    1.0)]
         if action == Action.SOUTH:
             return [PotentialState(State(x=self.x,
-                                         y=min(self.y + 1, self.HEIGHT)),
+                                         y=min(self.y + 1, HEIGHT)),
                                    1.0)]
         if action == Action.EAST:
-            return [PotentialState(State(x=min(self.x + 1, self.WIDTH),
+            return [PotentialState(State(x=min(self.x + 1, WIDTH),
                                          y=self.y),
                                    1.0)]
         if action == Action.WEST:
@@ -48,7 +48,7 @@ class State(namedtuple('State', ['x', 'y'])):
 
     @property
     def is_terminal(self) -> bool:
-        return self in [(1, 1), (self.WIDTH, self.HEIGHT)]
+        return self in [(1, 1), (WIDTH, HEIGHT)]
 
     @property
     def reward(self) -> float:
@@ -56,11 +56,11 @@ class State(namedtuple('State', ['x', 'y'])):
 
     @classmethod
     def xrange(cls):
-        return range(1, cls.WIDTH + 1)
+        return range(1, WIDTH + 1)
 
     @classmethod
     def yrange(cls):
-        return range(1, cls.HEIGHT + 1)
+        return range(1, HEIGHT + 1)
 
     @classmethod
     def all(cls):
@@ -115,7 +115,7 @@ class StateValue:
 
         if not state.is_terminal:
             for action in Action:
-                action_reward = 0
+                action_reward = 0.0
                 action_probability = self.policy(state, action)
                 for next_state, probability in state.perform(action):
                     action_reward += (probability * DISCOUNT *
