@@ -2,7 +2,7 @@
 # example from Sutton and Barto's Reinforcement Learning textbook.
 
 from enum import IntEnum
-from typing import Tuple, List, Callable, Dict, Any, NamedTuple
+from typing import Tuple, List, Callable, Dict, Any, NamedTuple, Iterator
 
 
 probability = float
@@ -55,15 +55,15 @@ class State(NamedTuple):
         return 0 if self.is_terminal else -1.0
 
     @classmethod
-    def xrange(cls):
+    def xrange(cls) -> range:
         return range(1, WIDTH + 1)
 
     @classmethod
-    def yrange(cls):
+    def yrange(cls) -> range:
         return range(1, HEIGHT + 1)
 
     @classmethod
-    def all(cls):
+    def all(cls) -> Iterator['State']:
         for x in cls.xrange():
             for y in cls.yrange():
                 yield cls(x=x, y=y)
@@ -133,7 +133,7 @@ class StateValue:
             max_reward = float('-inf')
             action_rewards = {}  # type: Dict[Action, float]
             for action in Action:
-                action_reward = 0
+                action_reward = 0.0
                 for next_state, prob in state.perform(action):
                     action_reward += prob * self(next_state)
                 if action_reward > max_reward:
