@@ -84,7 +84,16 @@ zero_policy: Policy = dict([(s, 0) for s in State.iter_all()])
 
 zero_state_value: StateValue = dict([(s, 0.0) for s in State.iter_all()])
 
-def eval_policy(policy: Policy, theta: float=0.01) -> StateValue:
+def print_state_value(sv: StateValue) -> None:
+    lines = []
+    for one in range(0, MAX_AT_LOC + 1):
+        line = []
+        for two in range(0, MAX_AT_LOC + 1):
+            line.append('{:3.0f}'.format(sv[State(one, two)]))
+        lines.append(' '.join(line))
+    print('\n'.join(lines))
+
+def eval_policy(policy: Policy, theta: float=1.0) -> StateValue:
     sv = zero_state_value
 
     while True:
@@ -101,6 +110,7 @@ def eval_policy(policy: Policy, theta: float=0.01) -> StateValue:
                 max_delta = delta
         sv = next_sv
         print(f'finished iteration, max_delta={max_delta}')
+        print_state_value(sv)
         if max_delta < theta:
             break
     return sv
