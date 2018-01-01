@@ -1,5 +1,5 @@
 # This is an attempt to implement the "Jack's Car Rental" example 4.2
-# from Sutton and Barto's Reinforcement Learning textbook.
+# and exercise 4.5 from Sutton and Barto's Reinforcement Learning textbook.
 
 import math
 import random
@@ -9,13 +9,26 @@ from typing import NamedTuple, Iterator, Tuple, Dict, List
 
 DISCOUNT_RATE = 0.9
 
+# Maximum number of cars that can be at a location.
 MAX_AT_LOC = 10
 
+# Maximum number of cars that can be shuttled overnight.
 MAX_CAN_MOVE = 3
 
+# Cost to shuttle one car from one location to another overnight.
 MOVE_COST = 2.0
 
+# Income we receive every time a car is rented.
 RENTAL_COST = 10.0
+
+# If more than MAX_AT_LOC / 2 cars are kept overnight at a
+# location (after any moving of cars) then an additional
+# cost must be incurred to use a second parking lot
+# (independent of how many cars are kept there).
+# (From exercise 4.5)
+PARKING_LOT_MAX = MAX_AT_LOC / 2
+
+SECOND_PARKING_LOT_COST = 4.0
 
 # Positive ints indicate # of cars to move from loc_one to loc_two,
 # negative ints indicate moves in the opposite direction.
@@ -57,6 +70,13 @@ class State(NamedTuple):
                 loc_one > MAX_AT_LOC or loc_two > MAX_AT_LOC):
             raise IllegalActionError()
         move_cost = abs(action) * MOVE_COST
+        if action > 0:
+            # An employee is willing to shuttle one car to the second
+            # location for free. (From exercise 4.5)
+            move_cost -= MOVE_COST
+        extra_cost = 0.0
+        if loc_one > PARKING_LOT_MAX or loc_two > PARKING_LOT_MAX:
+            extra_cost = SECOND_PARKING_LOT_COST
         result = []
         for return_to_one in range(0, MAX_AT_LOC + 1):
             return_to_one_prob = poisson_prob(return_to_one, 3)
@@ -82,7 +102,7 @@ class State(NamedTuple):
                         )
                         reward = (
                             (rent_from_one + rent_from_two) * RENTAL_COST -
-                            move_cost
+                            move_cost - extra_cost
                         )
                         prob = (
                             return_to_one_prob *
