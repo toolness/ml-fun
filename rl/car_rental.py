@@ -32,8 +32,17 @@ class State(NamedTuple):
     loc_one: int
     loc_two: int
 
+    def predict_reward(self, action: Action, sv: 'StateValue') -> float:
+        reward = 0.0
+        for trans in self.perform_action(action):
+            reward += trans.probability * (
+                trans.reward + DISCOUNT_RATE * sv[trans.next_state]
+            )
+        return reward
+
+    @lru_cache(maxsize=2048)
     def perform_action(self, action: Action) -> List[StateTransition]:
-        assert action >= 0 and action <= MAX_CAN_MOVE
+        assert action >= -MAX_CAN_MOVE and action <= MAX_CAN_MOVE
         loc_one = self.loc_one - action
         loc_two = self.loc_two + action
         if (loc_one < 0 or loc_two < 0 or
@@ -84,14 +93,26 @@ zero_policy: Policy = dict([(s, 0) for s in State.iter_all()])
 
 zero_state_value: StateValue = dict([(s, 0.0) for s in State.iter_all()])
 
+
 def print_state_value(sv: StateValue) -> None:
     lines = []
-    for one in range(0, MAX_AT_LOC + 1):
+    for one in range(MAX_AT_LOC, -1, -1):
         line = []
         for two in range(0, MAX_AT_LOC + 1):
             line.append('{:3.0f}'.format(sv[State(one, two)]))
         lines.append(' '.join(line))
     print('\n'.join(lines))
+
+
+def print_policy(policy: Policy) -> None:
+    lines = []
+    for one in range(MAX_AT_LOC, -1, -1):
+        line = []
+        for two in range(0, MAX_AT_LOC + 1):
+            line.append('{:3.0f}'.format(policy[State(one, two)]))
+        lines.append(' '.join(line))
+    print('\n'.join(lines))
+
 
 def eval_policy(policy: Policy, theta: float=1.0) -> StateValue:
     sv = zero_state_value
@@ -101,19 +122,28 @@ def eval_policy(policy: Policy, theta: float=1.0) -> StateValue:
         max_delta = float('-inf')
         for state in State.iter_all():
             action = policy[state]
-            for trans in state.perform_action(action):
-                next_sv[state] += trans.probability * (
-                    trans.reward + DISCOUNT_RATE * sv[trans.next_state]
-                )
+            next_sv[state] = state.predict_reward(action, sv)
             delta = abs(sv[state] - next_sv[state])
             if delta > max_delta:
                 max_delta = delta
         sv = next_sv
-        print(f'finished iteration, max_delta={max_delta}')
+        print(f'finished policy eval iteration, max_delta={max_delta}')
         print_state_value(sv)
         if max_delta < theta:
             break
     return sv
+
+
+def create_improved_policy(sv: StateValue) -> Policy:
+    policy = zero_policy.copy()
+    for state in State.iter_all():
+        action_rewards = [
+            (action, state.predict_reward(action, sv))
+            for action in range(-MAX_CAN_MOVE, MAX_CAN_MOVE + 1)
+        ]
+        policy[state] = max(action_rewards, key=lambda x: x[1])[0]
+
+    return policy
 
 
 @lru_cache(maxsize=2048)
@@ -121,5 +151,17 @@ def poisson_prob(n: int, avg_per_interval: int) -> float:
     return ((math.pow(avg_per_interval, n) * math.exp(-avg_per_interval)) /
             math.factorial(n))
 
+
 if __name__ == '__main__':
-    eval_policy(zero_policy)
+    policy = zero_policy
+    i = 0
+    while True:
+        sv = eval_policy(policy)
+        new_policy = create_improved_policy(sv)
+        print(f'created improved policy, i={i}')
+        print_policy(new_policy)
+        if new_policy == policy:
+            break
+        i += 1
+        policy = new_policy
+    print(f'optimal policy reached after {i} iterations.')
