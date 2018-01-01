@@ -31,7 +31,10 @@ class ValueIterResult(NamedTuple):
     i: int
 
 def get_action_range(state: State) -> range:
-    return range(0, min(state, GOAL - state) + 1)
+    # Note that the book claims this range starts at 0, but
+    # betting $0 doesn't seem to make much sense as it'd result
+    # in a non-terminating episode, so I'm changing it to 1.
+    return range(1, min(state, GOAL - state) + 1)
 
 def iter_once(prob_heads: float, sv: StateValue, i: int) -> ValueIterResult:
     next_sv = sv.copy()
@@ -59,7 +62,7 @@ def iter_once(prob_heads: float, sv: StateValue, i: int) -> ValueIterResult:
     return ValueIterResult(policy, next_sv, max_delta, i)
 
 def iter_value(prob_heads: float,
-               theta: float=0.001) -> Iterator[ValueIterResult]:
+               theta: float=1.0e-20) -> Iterator[ValueIterResult]:
     sv = ZERO_STATE_VALUE
     i = 0
 
