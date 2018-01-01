@@ -115,21 +115,11 @@ def eval_policy(policy: Policy, theta: float=1.0) -> StateValue:
             break
     return sv
 
+
 @lru_cache(maxsize=2048)
 def poisson_prob(n: int, avg_per_interval: int) -> float:
     return ((math.pow(avg_per_interval, n) * math.exp(-avg_per_interval)) /
             math.factorial(n))
 
-
-def poisson_rand(avg_per_interval: int) -> int:
-    n = 0
-    rand = random.random()
-    while True:
-        prob = poisson_prob(n, avg_per_interval)
-        if rand < prob:
-            return n
-        n += 1
-        rand -= prob
-
-
-eval_policy(zero_policy)
+if __name__ == '__main__':
+    eval_policy(zero_policy)
