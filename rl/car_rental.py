@@ -28,6 +28,10 @@ class StateTransition(NamedTuple):
     probability: float
 
 
+class IllegalActionError(Exception):
+    pass
+
+
 class State(NamedTuple):
     loc_one: int
     loc_two: int
@@ -51,9 +55,7 @@ class State(NamedTuple):
         loc_two = self.loc_two + action
         if (loc_one < 0 or loc_two < 0 or
                 loc_one > MAX_AT_LOC or loc_two > MAX_AT_LOC):
-            loc_one = self.loc_one
-            loc_two = self.loc_two
-            action = 0
+            raise IllegalActionError()
         move_cost = abs(action) * MOVE_COST
         result = []
         for return_to_one in range(0, MAX_AT_LOC + 1):
@@ -151,10 +153,13 @@ def eval_policy(policy: Policy, theta: float=1.0) -> StateValue:
 def create_improved_policy(sv: StateValue) -> Policy:
     policy = zero_policy.copy()
     for state in State.iter_all():
-        action_rewards = [
-            (action, state.predict_reward(action, sv))
-            for action in range(-MAX_CAN_MOVE, MAX_CAN_MOVE + 1)
-        ]
+        action_rewards = []
+        for action in range(-MAX_CAN_MOVE, MAX_CAN_MOVE + 1):
+            try:
+                reward = state.predict_reward(action, sv)
+                action_rewards.append((action, reward))
+            except IllegalActionError:
+                pass
         policy[state] = max(action_rewards, key=lambda x: x[1])[0]
 
     return policy
