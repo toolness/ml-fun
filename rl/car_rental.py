@@ -34,10 +34,14 @@ class State(NamedTuple):
 
     def predict_reward(self, action: Action, sv: 'StateValue') -> float:
         reward = 0.0
+        total_prob = 0.0
         for trans in self.perform_action(action):
+            total_prob += trans.probability
             reward += trans.probability * (
                 trans.reward + DISCOUNT_RATE * sv[trans.next_state]
             )
+        if not math.isclose(total_prob, 1.0, rel_tol=0.01):
+            raise Exception(f'probabilities total to {total_prob}, not 1.0')
         return reward
 
     @lru_cache(maxsize=2048)
@@ -52,14 +56,24 @@ class State(NamedTuple):
             action = 0
         move_cost = abs(action) * MOVE_COST
         result = []
-        for return_to_one in range(0, MAX_AT_LOC - loc_one + 1):
+        for return_to_one in range(0, MAX_AT_LOC + 1):
             return_to_one_prob = poisson_prob(return_to_one, 3)
-            for return_to_two in range(0, MAX_AT_LOC - loc_two + 1):
+            for return_to_two in range(0, MAX_AT_LOC + 1):
                 return_to_two_prob = poisson_prob(return_to_two, 2)
-                for rent_from_one in range(0, loc_one + 1):
+                for rent_from_one in range(0, MAX_AT_LOC + 1):
                     rent_from_one_prob = poisson_prob(rent_from_one, 3)
-                    for rent_from_two in range(0, loc_two + 1):
+                    for rent_from_two in range(0, MAX_AT_LOC + 1):
                         rent_from_two_prob = poisson_prob(rent_from_two, 4)
+
+                        if return_to_one + loc_one > MAX_AT_LOC:
+                            return_to_one = MAX_AT_LOC - loc_one
+                        if return_to_two + loc_two > MAX_AT_LOC:
+                            return_to_two = MAX_AT_LOC - loc_two
+                        if rent_from_one > loc_one:
+                            rent_from_one = loc_one
+                        if rent_from_two > loc_two:
+                            rent_from_two = loc_two
+
                         state = State(
                             loc_one + return_to_one - rent_from_one,
                             loc_two + return_to_two - rent_from_two
