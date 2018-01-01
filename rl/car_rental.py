@@ -9,9 +9,9 @@ from typing import NamedTuple, Iterator, Tuple, Dict, List
 
 DISCOUNT_RATE = 0.9
 
-MAX_AT_LOC = 20
+MAX_AT_LOC = 10
 
-MAX_CAN_MOVE = 5
+MAX_CAN_MOVE = 3
 
 MOVE_COST = 2.0
 
