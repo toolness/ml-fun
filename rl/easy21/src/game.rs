@@ -40,11 +40,7 @@ impl Card {
     fn draw<T:Rng>(rng: &mut T) -> Self {
         // Red should be drawn with a probability of 1/3, while
         // Black has a 2/3 probability.
-        let color = *rng.choose(&[
-            Color::Red,
-            Color::Black,
-            Color::Black,
-        ]).unwrap();
+        let color = *rng.choose(&[Red, Black, Black]).unwrap();
         Self::draw_color(rng, color)
     }
 
@@ -75,7 +71,7 @@ impl State {
 
 #[cfg(test)]
 mod tests {
-    use game::{State, Color, Card};
+    use game::{State, Card};
     use game::Color::*;
     use rand::{Rng, thread_rng};
 
@@ -89,10 +85,10 @@ mod tests {
 
     #[test]
     fn card_new_works() {
-        let c = Card::new(1, Color::Red);
+        let c = Card::new(1, Red);
 
         assert_eq!(c.number, 1);
-        assert_eq!(c.color, Color::Red);
+        assert_eq!(c.color, Red);
     }
 
     #[test]
