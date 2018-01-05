@@ -32,6 +32,34 @@ pub enum Color {
     Black
 }
 
+pub trait Deck {
+    fn draw_color(&mut self, color: Color) -> Card;
+    fn draw(&mut self) -> Card;
+}
+
+pub struct RngDeck<T: Rng> {
+    rng: T
+}
+
+impl<T: Rng> RngDeck<T> {
+    fn new(rng: T) -> Self {
+        RngDeck { rng }
+    }
+}
+
+impl<T: Rng> Deck for RngDeck<T> {
+    fn draw_color(&mut self, color: Color) -> Card {
+        Card::new(self.rng.gen_range(MIN_CARD, MAX_CARD + 1), color)
+    }
+
+    fn draw(&mut self) -> Card {
+        // Red should be drawn with a probability of 1/3, while
+        // Black has a 2/3 probability.
+        let color = *self.rng.choose(&[Red, Black, Black]).unwrap();
+        self.draw_color(color)
+    }
+}
+
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub struct Card {
@@ -43,17 +71,6 @@ impl Card {
     fn new(number: i32, color: Color) -> Self {
         assert!(number >= MIN_CARD && number <= MAX_CARD);
         Self { number, color }
-    }
-
-    fn draw_color<T:Rng>(rng: &mut T, color: Color) -> Self {
-        Self::new(rng.gen_range(MIN_CARD, MAX_CARD + 1), color)
-    }
-
-    fn draw<T:Rng>(rng: &mut T) -> Self {
-        // Red should be drawn with a probability of 1/3, while
-        // Black has a 2/3 probability.
-        let color = *rng.choose(&[Red, Black, Black]).unwrap();
-        Self::draw_color(rng, color)
     }
 
     fn sum(cards: &Vec<Card>) -> i32 {
@@ -75,10 +92,10 @@ struct State {
 }
 
 impl State {
-    fn new<T:Rng>(rng: &mut T) -> Self {
+    fn new<T: Deck>(deck: &mut T) -> Self {
         State {
-            dealer: Card::draw_color(rng, Black).value(),
-            player: Card::draw_color(rng, Black).value()
+            dealer: deck.draw_color(Black).value(),
+            player: deck.draw_color(Black).value()
         }
     }
 
@@ -87,10 +104,10 @@ impl State {
         self.dealer < MIN_SUM || self.dealer >= DEALER_STICK_MIN
     }
 
-    fn step<T:Rng>(&self, rng: &mut T, action: Action) -> (Self, Reward) {
+    fn step<T: Deck>(&self, deck: &mut T, action: Action) -> (Self, Reward) {
         match action {
             Hit => {
-                let player = self.player + Card::draw(rng).value();
+                let player = self.player + deck.draw().value();
                 let reward = if player < MIN_SUM || player > MAX_SUM {
                     PLAYER_LOSE_REWARD
                 } else {
@@ -101,7 +118,7 @@ impl State {
             Stick => {
                 let mut dealer = self.dealer;
                 while dealer < DEALER_STICK_MIN && dealer >= MIN_SUM {
-                    dealer += Card::draw(rng).value();
+                    dealer += deck.draw().value();
                 }
                 let reward = if dealer < MIN_SUM || dealer > MAX_SUM {
                     PLAYER_WIN_REWARD
@@ -121,14 +138,18 @@ impl State {
 
 #[cfg(test)]
 mod tests {
-    use game::{State, Card};
+    use game::{State, Card, Deck, RngDeck};
     use game::Color::*;
     use game::Action::*;
-    use rand::thread_rng;
+    use rand::{thread_rng, ThreadRng};
+
+    fn rng_deck() -> RngDeck<ThreadRng> {
+        RngDeck::new(thread_rng())
+    }
 
     #[test]
     fn state_new_works() {
-        let s = State::new(&mut thread_rng());
+        let s = State::new(&mut rng_deck());
 
         assert!(s.dealer > 0);
         assert!(s.player > 0);
@@ -136,18 +157,21 @@ mod tests {
 
     #[test]
     fn hit_eventually_ends_game() {
-        let mut start = State::new(&mut thread_rng());
+        let mut deck = rng_deck();
+        let mut start = State::new(&mut deck);
 
         while !start.is_terminal() {
-            start = start.step(&mut thread_rng(), Hit).0;
+            start = start.step(&mut deck, Hit).0;
         }
     }
 
     #[test]
     fn state_is_terminal_works() {
+        let mut deck = rng_deck();
+
         for _ in 0..300 {
-            let start = State::new(&mut thread_rng());
-            let (end, _) = start.step(&mut thread_rng(), Stick);
+            let start = State::new(&mut deck);
+            let (end, _) = start.step(&mut deck, Stick);
 
             assert!(!start.is_terminal(), "{:?} should be non-terminal",
                     start);
@@ -164,9 +188,11 @@ mod tests {
     }
 
     #[test]
-    fn card_draw_works() {
+    fn rng_deck_draw_works() {
+        let mut deck = rng_deck();
+
         for _ in 0..300 {
-            Card::draw(&mut thread_rng());
+            deck.draw();
         }
     }
 
