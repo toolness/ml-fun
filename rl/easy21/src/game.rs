@@ -68,6 +68,7 @@ impl Card {
     }
 }
 
+#[derive(Debug)]
 struct State {
     dealer: i32,
     player: i32,
@@ -99,7 +100,7 @@ impl State {
             },
             Stick => {
                 let mut dealer = self.dealer;
-                while (dealer < DEALER_STICK_MIN && dealer > MIN_SUM) {
+                while dealer < DEALER_STICK_MIN && dealer >= MIN_SUM {
                     dealer += Card::draw(rng).value();
                 }
                 let reward = if dealer < MIN_SUM || dealer > MAX_SUM {
@@ -123,7 +124,7 @@ mod tests {
     use game::{State, Card};
     use game::Color::*;
     use game::Action::*;
-    use rand::{Rng, thread_rng};
+    use rand::thread_rng;
 
     #[test]
     fn state_new_works() {
@@ -134,12 +135,24 @@ mod tests {
     }
 
     #[test]
-    fn state_is_terminal_works() {
-        let start = State::new(&mut thread_rng());
-        let (end, _) = start.step(&mut thread_rng(), Stick);
+    fn hit_eventually_ends_game() {
+        let mut start = State::new(&mut thread_rng());
 
-        assert!(!start.is_terminal());
-        assert!(end.is_terminal());
+        while !start.is_terminal() {
+            start = start.step(&mut thread_rng(), Hit).0;
+        }
+    }
+
+    #[test]
+    fn state_is_terminal_works() {
+        for _ in 0..300 {
+            let start = State::new(&mut thread_rng());
+            let (end, _) = start.step(&mut thread_rng(), Stick);
+
+            assert!(!start.is_terminal(), "{:?} should be non-terminal",
+                    start);
+            assert!(end.is_terminal(), "{:?} should be terminal", end);
+        }
     }
 
     #[test]
@@ -152,7 +165,7 @@ mod tests {
 
     #[test]
     fn card_draw_works() {
-        for i in 0..300 {
+        for _ in 0..300 {
             Card::draw(&mut thread_rng());
         }
     }
