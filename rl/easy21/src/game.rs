@@ -31,6 +31,10 @@ impl Card {
         Self { number, color }
     }
 
+    fn draw_color<T:Rng>(rng: &mut T, color: Color) -> Self {
+        Self::new(rng.gen_range(1, 11), color)
+    }
+
     fn draw<T:Rng>(rng: &mut T) -> Self {
         // Red should be drawn with a probability of 1/3, while
         // Black has a 2/3 probability.
@@ -39,7 +43,7 @@ impl Card {
             Color::Black,
             Color::Black,
         ]).unwrap();
-        Self::new(rng.gen_range(1, 11), color)
+        Self::draw_color(rng, color)
     }
 }
 
