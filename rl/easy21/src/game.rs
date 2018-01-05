@@ -1,5 +1,7 @@
 use rand::Rng;
 
+use self::Color::*;
+
 type Reward = f32;
 
 #[derive(PartialEq)]
@@ -45,6 +47,15 @@ impl Card {
         ]).unwrap();
         Self::draw_color(rng, color)
     }
+
+    fn sum(cards: &Vec<Card>) -> i32 {
+        cards.iter().fold(0, |sum, ref card| {
+            sum + match card.color {
+                Red => -card.number,
+                Black => card.number,
+            }
+        })
+    }
 }
 
 struct State {
@@ -65,6 +76,7 @@ impl State {
 #[cfg(test)]
 mod tests {
     use game::{State, Color, Card};
+    use game::Color::*;
     use rand::{Rng, thread_rng};
 
     #[test]
@@ -88,5 +100,18 @@ mod tests {
         for i in 0..300 {
             Card::draw(&mut thread_rng());
         }
+    }
+
+    #[test]
+    fn card_sum_works() {
+        assert_eq!(Card::sum(&vec![
+            Card::new(1, Red),
+            Card::new(3, Red),
+        ]), -4);
+
+        assert_eq!(Card::sum(&vec![
+            Card::new(1, Red),
+            Card::new(3, Black),
+        ]), 2);
     }
 }
