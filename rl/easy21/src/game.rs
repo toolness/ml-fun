@@ -1,11 +1,20 @@
 use rand::Rng;
 
 use self::Color::*;
+use self::Action::*;
 
 const MIN_CARD: i32 = 1;
 const MAX_CARD: i32 = 10;
+const MIN_SUM: i32 = 1;
+const MAX_SUM: i32 = 21;
+const DEALER_STICK_MIN: i32 = 17;
 
 type Reward = f32;
+
+const NO_REWARD: Reward = 0.0;
+const PLAYER_LOSE_REWARD: Reward = -1.0;
+const PLAYER_WIN_REWARD: Reward = 1.0;
+const DRAW_REWARD: Reward = NO_REWARD;
 
 #[derive(PartialEq)]
 #[derive(Debug)]
@@ -48,12 +57,14 @@ impl Card {
     }
 
     fn sum(cards: &Vec<Card>) -> i32 {
-        cards.iter().fold(0, |sum, ref card| {
-            sum + match card.color {
-                Red => -card.number,
-                Black => card.number,
-            }
-        })
+        cards.iter().fold(0, |sum, ref card| sum + card.value())
+    }
+
+    fn value(&self) -> i32 {
+        match self.color {
+            Red => -self.number,
+            Black => self.number,
+        }
     }
 }
 
@@ -63,12 +74,47 @@ struct State {
 }
 
 impl State {
-    fn new() -> Self {
-        State { dealer: 0, player: 0 }
+    fn new<T:Rng>(rng: &mut T) -> Self {
+        State {
+            dealer: Card::draw_color(rng, Black).value(),
+            player: Card::draw_color(rng, Black).value()
+        }
     }
 
-    fn step(self, action: Action) -> (Self, Reward) {
-        unimplemented!();
+    fn is_terminal(&self) -> bool {
+        self.player < MIN_SUM || self.player > MAX_SUM ||
+        self.dealer < MIN_SUM || self.dealer >= DEALER_STICK_MIN
+    }
+
+    fn step<T:Rng>(&self, rng: &mut T, action: Action) -> (Self, Reward) {
+        match action {
+            Hit => {
+                let player = self.player + Card::draw(rng).value();
+                let reward = if player < MIN_SUM || player > MAX_SUM {
+                    PLAYER_LOSE_REWARD
+                } else {
+                    NO_REWARD
+                };
+                (State { dealer: self.dealer, player }, reward)
+            },
+            Stick => {
+                let mut dealer = self.dealer;
+                while (dealer < DEALER_STICK_MIN && dealer > MIN_SUM) {
+                    dealer += Card::draw(rng).value();
+                }
+                let reward = if dealer < MIN_SUM || dealer > MAX_SUM {
+                    PLAYER_WIN_REWARD
+                } else if dealer == self.player {
+                    DRAW_REWARD
+                } else if dealer < self.player {
+                    PLAYER_WIN_REWARD
+                } else {
+                    PLAYER_LOSE_REWARD
+                };
+
+                (State { dealer, player: self.player }, reward)
+            }
+        }
     }
 }
 
@@ -76,14 +122,24 @@ impl State {
 mod tests {
     use game::{State, Card};
     use game::Color::*;
+    use game::Action::*;
     use rand::{Rng, thread_rng};
 
     #[test]
     fn state_new_works() {
-        let s = State::new();
+        let s = State::new(&mut thread_rng());
 
-        assert_eq!(s.dealer, 0);
-        assert_eq!(s.player, 0);
+        assert!(s.dealer > 0);
+        assert!(s.player > 0);
+    }
+
+    #[test]
+    fn state_is_terminal_works() {
+        let start = State::new(&mut thread_rng());
+        let (end, _) = start.step(&mut thread_rng(), Stick);
+
+        assert!(!start.is_terminal());
+        assert!(end.is_terminal());
     }
 
     #[test]
