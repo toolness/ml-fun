@@ -2,6 +2,9 @@ use rand::Rng;
 
 use self::Color::*;
 
+const MIN_CARD: i32 = 1;
+const MAX_CARD: i32 = 10;
+
 type Reward = f32;
 
 #[derive(PartialEq)]
@@ -29,12 +32,12 @@ pub struct Card {
 
 impl Card {
     fn new(number: i32, color: Color) -> Self {
-        assert!(number >= 1 && number <= 10);
+        assert!(number >= MIN_CARD && number <= MAX_CARD);
         Self { number, color }
     }
 
     fn draw_color<T:Rng>(rng: &mut T, color: Color) -> Self {
-        Self::new(rng.gen_range(1, 11), color)
+        Self::new(rng.gen_range(MIN_CARD, MAX_CARD + 1), color)
     }
 
     fn draw<T:Rng>(rng: &mut T) -> Self {
