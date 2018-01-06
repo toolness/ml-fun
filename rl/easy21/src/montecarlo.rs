@@ -17,7 +17,7 @@ fn increment<T: Eq + Hash + Copy>(map: &mut HashMap<T, f32>, key: T,
     new_val
 }
 
-struct Control<T: Deck, U: Rng> {
+pub struct Control<T: Deck, U: Rng> {
     value_fn: ValueFn,
     times_visited: HashMap<State, f32>,
     total_visits: HashMap<(State, Action), Reward>,
