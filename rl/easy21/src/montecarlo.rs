@@ -5,6 +5,8 @@ use game::{State, Action, Deck, Reward};
 use game::Action::*;
 
 
+type ValueFn = HashMap<(State, Action), Reward>;
+
 fn increment<T: Eq + Hash + Copy>(map: &mut HashMap<T, f32>, key: T,
                                   amount: f32) -> f32 {
     let prev_val = *map.entry(key).or_insert(0.0);
@@ -13,8 +15,14 @@ fn increment<T: Eq + Hash + Copy>(map: &mut HashMap<T, f32>, key: T,
     new_val
 }
 
+fn choose_best_action(value_fn: &mut ValueFn, state: State) -> Action {
+    let hit = *value_fn.entry((state, Hit)).or_insert(0.0);
+    let stick = *value_fn.entry((state, Stick)).or_insert(0.0);
+    if hit > stick { Hit } else { Stick }
+}
+
 fn control<T: Deck>(deck: &mut T, max_episodes: i32) {
-    let mut value_fn: HashMap<(State, Action), Reward> = HashMap::new();
+    let mut value_fn: ValueFn = HashMap::new();
     let mut times_visited: HashMap<State, f32> = HashMap::new();
     let mut total_rewards: HashMap<(State, Action), Reward> = HashMap::new();
     let mut total_visits: HashMap<(State, Action), Reward> = HashMap::new();
@@ -30,9 +38,7 @@ fn control<T: Deck>(deck: &mut T, max_episodes: i32) {
 
         while !state.is_terminal() {
             increment(&mut times_visited, state, 1.0);
-            let hit = *value_fn.entry((state, Hit)).or_insert(0.0);
-            let stick = *value_fn.entry((state, Stick)).or_insert(0.0);
-            let action = if hit > stick { Hit } else { Stick };
+            let action = choose_best_action(&mut value_fn, state);
             let (next_state, reward) = state.step(deck, action);
             total_reward += reward;
             state_actions_visited.entry((state, action)).or_insert(true);
