@@ -11,7 +11,7 @@ type ValueFn = HashMap<(State, Action), Reward>;
 
 fn increment<T: Eq + Hash + Copy>(map: &mut HashMap<T, f32>, key: T,
                                   amount: f32) -> f32 {
-    let prev_val = *map.entry(key).or_insert(0.0);
+    let prev_val = *map.get(&key).unwrap_or(&0.0);
     let new_val = prev_val + amount;
     map.insert(key, new_val);
     new_val
@@ -38,9 +38,9 @@ impl<T: Deck, U: Rng> Control<T, U> {
         }
     }
 
-    fn choose_best_action(&mut self, state: State) -> Action {
-        let hit = *self.value_fn.entry((state, Hit)).or_insert(0.0);
-        let stick = *self.value_fn.entry((state, Stick)).or_insert(0.0);
+    fn choose_best_action(&self, state: State) -> Action {
+        let hit = *self.value_fn.get(&(state, Hit)).unwrap_or(&0.0);
+        let stick = *self.value_fn.get(&(state, Stick)).unwrap_or(&0.0);
         if hit > stick { Hit } else { Stick }
     }
 
@@ -51,8 +51,8 @@ impl<T: Deck, U: Rng> Control<T, U> {
             // was visited in an episode.
             let visits = increment(&mut self.total_visits, (state, action),
                                    1.0);
-            let old_value = *self.value_fn.entry((state, action))
-              .or_insert(0.0);
+            let old_value = *self.value_fn.get(&(state, action))
+              .unwrap_or(&0.0);
             let step_size = 1.0 / visits;
             let new_value = old_value + step_size * (reward - old_value);
             self.value_fn.insert((state, action), new_value);
@@ -65,7 +65,7 @@ impl<T: Deck, U: Rng> Control<T, U> {
 
     fn should_explore(&mut self, state: State) -> bool {
         let n_0 = 100.0;
-        let visited = *self.times_visited.entry(state).or_insert(0.0);
+        let visited = *self.times_visited.get(&state).unwrap_or(&0.0);
         let epsilon = n_0 / (n_0 + visited);
         self.rng.next_f32() < epsilon
     }
@@ -97,14 +97,14 @@ impl<T: Deck, U: Rng> Control<T, U> {
         }
     }
 
-    pub fn print_optimal_value_fn(&mut self) {
+    pub fn print_optimal_value_fn(&self) {
         let dealer_rng = MIN_CARD..MAX_CARD + 1;
         for player in (MIN_SUM..MAX_SUM + 1).rev() {
             for dealer in dealer_rng.clone() {
                 let state = State { dealer, player };
                 let action = self.choose_best_action(state);
-                let value = *self.value_fn.entry((state, action))
-                  .or_insert(0.0);
+                let value = *self.value_fn.get(&(state, action))
+                  .unwrap_or(&0.0);
                 let ivalue = (value * 100.0) as i32;
                 print!("{:3} ", ivalue);
             }
