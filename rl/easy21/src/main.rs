@@ -18,5 +18,5 @@ fn main() {
              EPISODES);
     control.play_episodes(EPISODES);
 
-    println!("Done.");
+    control.print();
 }

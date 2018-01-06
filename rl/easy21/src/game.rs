@@ -3,10 +3,10 @@ use rand::Rng;
 use self::Color::*;
 use self::Action::*;
 
-const MIN_CARD: i32 = 1;
-const MAX_CARD: i32 = 10;
-const MIN_SUM: i32 = 1;
-const MAX_SUM: i32 = 21;
+pub const MIN_CARD: i32 = 1;
+pub const MAX_CARD: i32 = 10;
+pub const MIN_SUM: i32 = 1;
+pub const MAX_SUM: i32 = 21;
 const DEALER_STICK_MIN: i32 = 17;
 
 pub type Reward = f32;

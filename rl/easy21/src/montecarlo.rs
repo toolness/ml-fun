@@ -3,7 +3,7 @@ use std::hash::Hash;
 
 use rand::Rng;
 
-use game::{State, Action, Deck, Reward};
+use game::{State, Action, Deck, Reward, MIN_SUM, MAX_SUM, MIN_CARD, MAX_CARD};
 use game::Action::*;
 
 
@@ -95,6 +95,33 @@ impl<T: Deck, U: Rng> Control<T, U> {
         for _ in 0..count {
             self.play_episode();
         }
+    }
+
+    pub fn print(&mut self) {
+        let dealer_rng = MIN_CARD..MAX_CARD + 1;
+        for player in (MIN_SUM..MAX_SUM + 1).rev() {
+            for dealer in dealer_rng.clone() {
+                let state = State { dealer, player };
+                let action = self.choose_best_action(state);
+                let value = *self.value_fn.entry((state, action))
+                  .or_insert(0.0);
+                let ivalue = (value * 100.0) as i32;
+                print!("{:3} ", ivalue);
+            }
+            println!("  <- player sum = {}", player);
+        }
+        for _ in dealer_rng.clone() {
+            print!("----");
+        }
+        println!();
+        for dealer in dealer_rng {
+            if dealer == 1 {
+                print!("  A ");
+            } else {
+                print!("{:3} ", dealer);
+            }
+        }
+        println!("  <- dealer showing");
     }
 }
 
