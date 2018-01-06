@@ -28,6 +28,32 @@ pub trait Alg {
                       reward: Reward) {
         let _ = (visited, reward);
     }
+
+    fn print_optimal_values(&self) {
+        let dealer_rng = MIN_CARD..MAX_CARD + 1;
+        for player in (MIN_SUM..MAX_SUM + 1).rev() {
+            for dealer in dealer_rng.clone() {
+                let state = State { dealer, player };
+                let action = self.choose_best_action(state);
+                let value = self.get_expected_reward(state, action);
+                let ivalue = (value * 100.0) as i32;
+                print!("{:3} ", ivalue);
+            }
+            println!("  <- player sum = {}", player);
+        }
+        for _ in dealer_rng.clone() {
+            print!("----");
+        }
+        println!();
+        for dealer in dealer_rng {
+            if dealer == 1 {
+                print!("  A ");
+            } else {
+                print!("{:3} ", dealer);
+            }
+        }
+        println!("  <- dealer showing");
+    }
 }
 
 pub struct Control<T: Deck, U: Rng, V: Alg> {
@@ -35,7 +61,7 @@ pub struct Control<T: Deck, U: Rng, V: Alg> {
     episodes: i32,
     deck: T,
     rng: U,
-    alg: V,
+    pub alg: V,
 }
 
 impl<T: Deck, U: Rng, V: Alg> Control<T, U, V> {
@@ -85,32 +111,6 @@ impl<T: Deck, U: Rng, V: Alg> Control<T, U, V> {
         for _ in 0..count {
             self.play_episode();
         }
-    }
-
-    pub fn print_optimal_value_fn(&self) {
-        let dealer_rng = MIN_CARD..MAX_CARD + 1;
-        for player in (MIN_SUM..MAX_SUM + 1).rev() {
-            for dealer in dealer_rng.clone() {
-                let state = State { dealer, player };
-                let action = self.alg.choose_best_action(state);
-                let value = self.alg.get_expected_reward(state, action);
-                let ivalue = (value * 100.0) as i32;
-                print!("{:3} ", ivalue);
-            }
-            println!("  <- player sum = {}", player);
-        }
-        for _ in dealer_rng.clone() {
-            print!("----");
-        }
-        println!();
-        for dealer in dealer_rng {
-            if dealer == 1 {
-                print!("  A ");
-            } else {
-                print!("{:3} ", dealer);
-            }
-        }
-        println!("  <- dealer showing");
     }
 }
 

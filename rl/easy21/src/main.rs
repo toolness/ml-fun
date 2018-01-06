@@ -7,6 +7,7 @@ mod montecarlo;
 
 use rand::{SeedableRng, StdRng};
 use clap::{App, SubCommand};
+use gpi::Alg;
 
 fn run_monte_carlo() {
     let seed: &[_] = &[1, 2, 3, 4];
@@ -21,7 +22,7 @@ fn run_monte_carlo() {
              EPISODES);
     control.play_episodes(EPISODES);
 
-    control.print_optimal_value_fn();
+    control.alg.print_optimal_values();
 }
 
 fn main() {
