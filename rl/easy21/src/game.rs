@@ -9,24 +9,20 @@ const MIN_SUM: i32 = 1;
 const MAX_SUM: i32 = 21;
 const DEALER_STICK_MIN: i32 = 17;
 
-type Reward = f32;
+pub type Reward = f32;
 
 const NO_REWARD: Reward = 0.0;
 const PLAYER_LOSE_REWARD: Reward = -1.0;
 const PLAYER_WIN_REWARD: Reward = 1.0;
 const DRAW_REWARD: Reward = NO_REWARD;
 
-#[derive(PartialEq)]
-#[derive(Debug)]
-enum Action {
+#[derive(Clone, Copy, Hash, Eq, PartialEq, Debug)]
+pub enum Action {
     Hit,
     Stick
 }
 
-#[derive(Clone)]
-#[derive(Copy)]
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Color {
     Red,
     Black
@@ -42,7 +38,7 @@ pub struct RngDeck<T: Rng> {
 }
 
 impl<T: Rng> RngDeck<T> {
-    fn new(rng: T) -> Self {
+    pub fn new(rng: T) -> Self {
         RngDeck { rng }
     }
 }
@@ -60,8 +56,7 @@ impl<T: Rng> Deck for RngDeck<T> {
     }
 }
 
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct Card {
     number: i32,
     color: Color,
@@ -85,26 +80,27 @@ impl Card {
     }
 }
 
-#[derive(Debug)]
-struct State {
-    dealer: i32,
-    player: i32,
+#[derive(Clone, Copy, Hash, Eq, PartialEq, Debug)]
+pub struct State {
+    pub dealer: i32,
+    pub player: i32,
 }
 
 impl State {
-    fn new<T: Deck>(deck: &mut T) -> Self {
+    pub fn new<T: Deck>(deck: &mut T) -> Self {
         State {
             dealer: deck.draw_color(Black).value(),
             player: deck.draw_color(Black).value()
         }
     }
 
-    fn is_terminal(&self) -> bool {
+    pub fn is_terminal(&self) -> bool {
         self.player < MIN_SUM || self.player > MAX_SUM ||
         self.dealer < MIN_SUM || self.dealer >= DEALER_STICK_MIN
     }
 
-    fn step<T: Deck>(&self, deck: &mut T, action: Action) -> (Self, Reward) {
+    pub fn step<T: Deck>(&self, deck: &mut T,
+                         action: Action) -> (Self, Reward) {
         match action {
             Hit => {
                 let player = self.player + deck.draw().value();

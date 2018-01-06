@@ -1,6 +1,7 @@
 extern crate rand;
 
 mod game;
+mod montecarlo;
 
 use rand::{Rng, SeedableRng, StdRng};
 
