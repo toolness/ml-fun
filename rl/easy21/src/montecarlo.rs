@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
+use rand::{thread_rng, ThreadRng, Rng};
+
 use game::{State, Action, Deck, Reward};
 use game::Action::*;
 
@@ -22,6 +24,7 @@ struct Control<T: Deck> {
     total_visits: HashMap<(State, Action), Reward>,
     episodes: i32,
     deck: T,
+    rng: ThreadRng,
 }
 
 impl<T: Deck> Control<T> {
@@ -33,6 +36,7 @@ impl<T: Deck> Control<T> {
             total_visits: HashMap::new(),
             episodes: 0,
             deck,
+            rng: thread_rng(),
         }
     }
 
@@ -53,16 +57,28 @@ impl<T: Deck> Control<T> {
         }
     }
 
+    fn exploratory_action(&mut self) -> Action {
+        if self.rng.gen_weighted_bool(2) { Hit } else { Stick }
+    }
+
+    fn should_explore(&mut self, state: State) -> bool {
+        let n_0 = 100.0;
+        let visited = *self.times_visited.entry(state).or_insert(0.0);
+        let epsilon = n_0 / (n_0 + visited);
+        self.rng.next_f32() < epsilon
+    }
+
     pub fn play_episode(&mut self) {
         let mut total_reward = 0.0;
         let mut state_actions_visited = HashMap::new();
         let mut state = State::new(&mut self.deck);
 
-        // TODO: Use a time-varying scalar step-size.
-        // TODO: Use an epsilon-greedy exploration strategy.
-
         while !state.is_terminal() {
-            let action = self.choose_best_action(state);
+            let action = if self.should_explore(state) {
+                self.exploratory_action()
+            } else {
+                self.choose_best_action(state)
+            };
             let (next_state, reward) = state.step(&mut self.deck, action);
             increment(&mut self.times_visited, state, 1.0);
             increment(&mut state_actions_visited, (state, action), 1.0);
