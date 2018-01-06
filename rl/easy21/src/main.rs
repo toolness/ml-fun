@@ -18,5 +18,5 @@ fn main() {
              EPISODES);
     control.play_episodes(EPISODES);
 
-    control.print();
+    control.print_optimal_value_fn();
 }

@@ -97,7 +97,7 @@ impl<T: Deck, U: Rng> Control<T, U> {
         }
     }
 
-    pub fn print(&mut self) {
+    pub fn print_optimal_value_fn(&mut self) {
         let dealer_rng = MIN_CARD..MAX_CARD + 1;
         for player in (MIN_SUM..MAX_SUM + 1).rev() {
             for dealer in dealer_rng.clone() {
