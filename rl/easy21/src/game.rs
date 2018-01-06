@@ -68,10 +68,6 @@ impl Card {
         Self { number, color }
     }
 
-    fn sum(cards: &Vec<Card>) -> i32 {
-        cards.iter().fold(0, |sum, ref card| sum + card.value())
-    }
-
     fn value(&self) -> i32 {
         match self.color {
             Red => -self.number,
@@ -190,18 +186,5 @@ mod tests {
         for _ in 0..300 {
             deck.draw();
         }
-    }
-
-    #[test]
-    fn card_sum_works() {
-        assert_eq!(Card::sum(&vec![
-            Card::new(1, Red),
-            Card::new(3, Red),
-        ]), -4);
-
-        assert_eq!(Card::sum(&vec![
-            Card::new(1, Red),
-            Card::new(3, Black),
-        ]), 2);
     }
 }
