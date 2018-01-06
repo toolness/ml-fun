@@ -42,6 +42,17 @@ impl<T: Deck> Control<T> {
         if hit > stick { Hit } else { Stick }
     }
 
+    fn update_value_fn(&mut self, visited: &HashMap<(State, Action), bool>,
+                       total_reward: Reward) {
+        for &(state, action) in visited.keys() {
+            let visits = increment(&mut self.total_visits, (state, action),
+                                   1.0);
+            let reward = increment(&mut self.total_rewards, (state, action),
+                                   total_reward);
+            self.value_fn.insert((state, action), reward / visits);
+        }
+    }
+
     pub fn play_episode(&mut self) {
         let mut total_reward = 0.0;
         let mut state_actions_visited = HashMap::new();
@@ -55,13 +66,7 @@ impl<T: Deck> Control<T> {
             state_actions_visited.entry((state, action)).or_insert(true);
             state = next_state;
         }
-        for &(state, action) in state_actions_visited.keys() {
-            let visits = increment(&mut self.total_visits, (state, action),
-                                   1.0);
-            let reward = increment(&mut self.total_rewards, (state, action),
-                                   total_reward);
-            self.value_fn.insert((state, action), reward / visits);
-        }
+        self.update_value_fn(&state_actions_visited, total_reward);
         self.episodes += 1;
     }
 }
