@@ -21,42 +21,49 @@ fn choose_best_action(value_fn: &mut ValueFn, state: State) -> Action {
     if hit > stick { Hit } else { Stick }
 }
 
-fn control<T: Deck>(deck: &mut T, max_episodes: i32) {
-    let mut value_fn: ValueFn = HashMap::new();
-    let mut times_visited: HashMap<State, f32> = HashMap::new();
-    let mut total_rewards: HashMap<(State, Action), Reward> = HashMap::new();
-    let mut total_visits: HashMap<(State, Action), Reward> = HashMap::new();
-    let mut episodes = 0;
-    let mut state = State::new(deck);
+struct Control<T: Deck> {
+    value_fn: ValueFn,
+    times_visited: HashMap<State, f32>,
+    total_rewards: HashMap<(State, Action), Reward>,
+    total_visits: HashMap<(State, Action), Reward>,
+    episodes: i32,
+    deck: T,
+}
 
-    // TODO: Use a time-varying scalar step-size.
-    // TODO: Use an epsilon-greedy exploration strategy.
+impl<T: Deck> Control<T> {
+    pub fn new(deck: T) -> Self {
+        Control {
+            value_fn: HashMap::new(),
+            times_visited: HashMap::new(),
+            total_rewards: HashMap::new(),
+            total_visits: HashMap::new(),
+            episodes: 0,
+            deck,
+        }
+    }
 
-    loop {
+    pub fn play_episode(&mut self) {
         let mut total_reward = 0.0;
         let mut state_actions_visited = HashMap::new();
+        let mut state = State::new(&mut self.deck);
 
         while !state.is_terminal() {
-            increment(&mut times_visited, state, 1.0);
-            let action = choose_best_action(&mut value_fn, state);
-            let (next_state, reward) = state.step(deck, action);
+            increment(&mut self.times_visited, state, 1.0);
+            let action = choose_best_action(&mut self.value_fn, state);
+            let (next_state, reward) = state.step(&mut self.deck, action);
             total_reward += reward;
             state_actions_visited.entry((state, action)).or_insert(true);
             state = next_state;
         }
         for &(state, action) in state_actions_visited.keys() {
-            let visits = increment(&mut total_visits, (state, action), 1.0);
-            let reward = increment(&mut total_rewards, (state, action),
+            let visits = increment(&mut self.total_visits, (state, action),
+                                   1.0);
+            let reward = increment(&mut self.total_rewards, (state, action),
                                    total_reward);
-            value_fn.insert((state, action), reward / visits);
+            self.value_fn.insert((state, action), reward / visits);
         }
-        episodes += 1;
-        if episodes == max_episodes {
-            break;
-        }
+        self.episodes += 1;
     }
-
-    value_fn.insert((state, Action::Hit), 1.0);
 }
 
 #[cfg(test)]
@@ -64,12 +71,15 @@ mod tests {
     use game::RngDeck;
     use rand::thread_rng;
 
-    use montecarlo::control;
+    use montecarlo::Control;
 
     #[test]
-    fn test_control_works() {
-        let mut deck = RngDeck::new(thread_rng());
+    fn test_play_episode_works() {
+        let deck = RngDeck::new(thread_rng());
+        let mut control = Control::new(deck);
 
-        control(&mut deck, 1);
+        control.play_episode();
+
+        assert_eq!(control.episodes, 1);
     }
 }
