@@ -42,11 +42,11 @@ impl<T: Deck> Control<T> {
         if hit > stick { Hit } else { Stick }
     }
 
-    fn update_value_fn(&mut self, visited: &HashMap<(State, Action), bool>,
+    fn update_value_fn(&mut self, visited: &HashMap<(State, Action), f32>,
                        total_reward: Reward) {
-        for &(state, action) in visited.keys() {
+        for (&(state, action), &times) in visited.iter() {
             let visits = increment(&mut self.total_visits, (state, action),
-                                   1.0);
+                                   times);
             let reward = increment(&mut self.total_rewards, (state, action),
                                    total_reward);
             self.value_fn.insert((state, action), reward / visits);
@@ -62,11 +62,11 @@ impl<T: Deck> Control<T> {
         // TODO: Use an epsilon-greedy exploration strategy.
 
         while !state.is_terminal() {
-            increment(&mut self.times_visited, state, 1.0);
             let action = self.choose_best_action(state);
             let (next_state, reward) = state.step(&mut self.deck, action);
+            increment(&mut self.times_visited, state, 1.0);
+            increment(&mut state_actions_visited, (state, action), 1.0);
             total_reward += reward;
-            state_actions_visited.entry((state, action)).or_insert(true);
             state = next_state;
         }
         self.update_value_fn(&state_actions_visited, total_reward);
