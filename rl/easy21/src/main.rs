@@ -2,17 +2,18 @@ extern crate rand;
 extern crate clap;
 
 mod game;
+mod gpi;
 mod montecarlo;
 
-use game::RngDeck;
 use rand::{SeedableRng, StdRng};
 use clap::{App, SubCommand};
 
 fn run_monte_carlo() {
     let seed: &[_] = &[1, 2, 3, 4];
     let rng: StdRng = SeedableRng::from_seed(seed);
-    let deck = RngDeck::new(rng);
-    let mut control = montecarlo::Control::new(deck, rng);
+    let deck = game::RngDeck::new(rng);
+    let mc_alg = montecarlo::MonteCarlo::new();
+    let mut control = gpi::Control::new(deck, rng, mc_alg);
 
     const EPISODES: i32 = 30_000;
 
