@@ -20,7 +20,6 @@ fn increment<T: Eq + Hash + Copy>(map: &mut HashMap<T, f32>, key: T,
 struct Control<T: Deck> {
     value_fn: ValueFn,
     times_visited: HashMap<State, f32>,
-    total_rewards: HashMap<(State, Action), Reward>,
     total_visits: HashMap<(State, Action), Reward>,
     episodes: i32,
     deck: T,
@@ -32,7 +31,6 @@ impl<T: Deck> Control<T> {
         Control {
             value_fn: HashMap::new(),
             times_visited: HashMap::new(),
-            total_rewards: HashMap::new(),
             total_visits: HashMap::new(),
             episodes: 0,
             deck,
@@ -53,9 +51,10 @@ impl<T: Deck> Control<T> {
             // was visited in an episode.
             let visits = increment(&mut self.total_visits, (state, action),
                                    1.0);
-            let reward = increment(&mut self.total_rewards, (state, action),
-                                   total_reward);
-            self.value_fn.insert((state, action), reward / visits);
+            let old_value = *self.value_fn.entry((state, action))
+              .or_insert(0.0);
+            let new_value = old_value + (total_reward - old_value) / visits;
+            self.value_fn.insert((state, action), new_value);
         }
     }
 
