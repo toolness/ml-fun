@@ -38,8 +38,9 @@ impl Alg for MonteCarlo {
         reward: Reward
     ) {
         for &(state, action) in visited.keys() {
-            // We only care about the *first* time a state/action pair
-            // was visited in an episode.
+            // Even though the value of `visited` tells us how many times
+            // the state/action pair was visited, we only care about
+            // the *first* time it was visited in an episode.
             let visits = increment(&mut self.total_visits, (state, action),
                                    1.0);
             let old_value = *self.value_fn.get(&(state, action))

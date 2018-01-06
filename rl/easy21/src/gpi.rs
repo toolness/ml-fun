@@ -12,15 +12,28 @@ use util::increment;
 
 
 pub trait Alg {
+    // Given the current state, return the action that maximizes reward
+    // in the long-term.
     fn choose_best_action(&self, state: State) -> Action;
 
+    // Return the expected long-term reward if we take the given action
+    // at the given state.
     fn get_expected_reward(&self, state: State, action: Action) -> Reward;
 
+    // A hook that's called whenever an episode ends. Implementations can
+    // use this to e.g. update their value functions.
+    //
+    // `visited` is a mapping that indicates how many times a given
+    // state/action pair was visited during the episode.
+    //
+    // `reward` is the total reward accrued during the episode.
     fn on_episode_end(&mut self, visited: &HashMap<(State, Action), f32>,
                       reward: Reward) {
         let _ = (visited, reward);
     }
 
+    // Print the expected reward for every state given that we
+    // take the optimal action at each state.
     fn print_optimal_values(&self) {
         let dealer_rng = MIN_CARD..MAX_CARD + 1;
         for player in (MIN_SUM..MAX_SUM + 1).rev() {
