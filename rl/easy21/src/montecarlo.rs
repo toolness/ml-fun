@@ -45,7 +45,7 @@ impl<T: Deck> Control<T> {
     }
 
     fn update_value_fn(&mut self, visited: &HashMap<(State, Action), f32>,
-                       total_reward: Reward) {
+                       reward: Reward) {
         for &(state, action) in visited.keys() {
             // We only care about the *first* time a state/action pair
             // was visited in an episode.
@@ -53,7 +53,8 @@ impl<T: Deck> Control<T> {
                                    1.0);
             let old_value = *self.value_fn.entry((state, action))
               .or_insert(0.0);
-            let new_value = old_value + (total_reward - old_value) / visits;
+            let step_size = 1.0 / visits;
+            let new_value = old_value + step_size * (reward - old_value);
             self.value_fn.insert((state, action), new_value);
         }
     }
