@@ -11,6 +11,7 @@ use game::Action::*;
 use util::increment;
 
 
+// This trait encapsulates a specific algorithm to use for GPI.
 pub trait Alg {
     // Given the current state, return the action that maximizes reward
     // in the long-term.
