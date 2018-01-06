@@ -48,9 +48,11 @@ impl<T: Deck> Control<T> {
 
     fn update_value_fn(&mut self, visited: &HashMap<(State, Action), f32>,
                        total_reward: Reward) {
-        for (&(state, action), &times) in visited.iter() {
+        for &(state, action) in visited.keys() {
+            // We only care about the *first* time a state/action pair
+            // was visited in an episode.
             let visits = increment(&mut self.total_visits, (state, action),
-                                   times);
+                                   1.0);
             let reward = increment(&mut self.total_rewards, (state, action),
                                    total_reward);
             self.value_fn.insert((state, action), reward / visits);
