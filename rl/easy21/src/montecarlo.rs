@@ -15,12 +15,6 @@ fn increment<T: Eq + Hash + Copy>(map: &mut HashMap<T, f32>, key: T,
     new_val
 }
 
-fn choose_best_action(value_fn: &mut ValueFn, state: State) -> Action {
-    let hit = *value_fn.entry((state, Hit)).or_insert(0.0);
-    let stick = *value_fn.entry((state, Stick)).or_insert(0.0);
-    if hit > stick { Hit } else { Stick }
-}
-
 struct Control<T: Deck> {
     value_fn: ValueFn,
     times_visited: HashMap<State, f32>,
@@ -42,6 +36,12 @@ impl<T: Deck> Control<T> {
         }
     }
 
+    fn choose_best_action(&mut self, state: State) -> Action {
+        let hit = *self.value_fn.entry((state, Hit)).or_insert(0.0);
+        let stick = *self.value_fn.entry((state, Stick)).or_insert(0.0);
+        if hit > stick { Hit } else { Stick }
+    }
+
     pub fn play_episode(&mut self) {
         let mut total_reward = 0.0;
         let mut state_actions_visited = HashMap::new();
@@ -49,7 +49,7 @@ impl<T: Deck> Control<T> {
 
         while !state.is_terminal() {
             increment(&mut self.times_visited, state, 1.0);
-            let action = choose_best_action(&mut self.value_fn, state);
+            let action = self.choose_best_action(state);
             let (next_state, reward) = state.step(&mut self.deck, action);
             total_reward += reward;
             state_actions_visited.entry((state, action)).or_insert(true);
