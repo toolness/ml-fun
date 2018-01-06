@@ -58,6 +58,9 @@ impl<T: Deck> Control<T> {
         let mut state_actions_visited = HashMap::new();
         let mut state = State::new(&mut self.deck);
 
+        // TODO: Use a time-varying scalar step-size.
+        // TODO: Use an epsilon-greedy exploration strategy.
+
         while !state.is_terminal() {
             increment(&mut self.times_visited, state, 1.0);
             let action = self.choose_best_action(state);
