@@ -61,7 +61,7 @@ pub trait Alg {
     }
 }
 
-pub struct Control<T: Deck, U: Rng, V: Alg> {
+pub struct Gpi<T: Deck, U: Rng, V: Alg> {
     times_visited: HashMap<State, f32>,
     episodes: i32,
     deck: T,
@@ -69,9 +69,9 @@ pub struct Control<T: Deck, U: Rng, V: Alg> {
     pub alg: V,
 }
 
-impl<T: Deck, U: Rng, V: Alg> Control<T, U, V> {
+impl<T: Deck, U: Rng, V: Alg> Gpi<T, U, V> {
     pub fn new(deck: T, rng: U, alg: V) -> Self {
-        Control {
+        Gpi {
             times_visited: HashMap::new(),
             episodes: 0,
             deck,
@@ -124,7 +124,7 @@ mod tests {
     use game::{RngDeck, State, Action, Reward};
     use rand::thread_rng;
 
-    use gpi::{Control, Alg};
+    use gpi::{Gpi, Alg};
 
     struct DumbAlg {}
 
@@ -141,10 +141,10 @@ mod tests {
     #[test]
     fn test_play_episodes_works() {
         let deck = RngDeck::new(thread_rng());
-        let mut control = Control::new(deck, thread_rng(), DumbAlg {});
+        let mut gpi = Gpi::new(deck, thread_rng(), DumbAlg {});
 
-        control.play_episodes(3);
+        gpi.play_episodes(3);
 
-        assert_eq!(control.episodes, 3);
+        assert_eq!(gpi.episodes, 3);
     }
 }

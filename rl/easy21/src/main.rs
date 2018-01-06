@@ -15,15 +15,15 @@ fn run_monte_carlo() {
     let rng: StdRng = SeedableRng::from_seed(seed);
     let deck = game::RngDeck::new(rng);
     let mc_alg = montecarlo::MonteCarlo::new();
-    let mut control = gpi::Control::new(deck, rng, mc_alg);
+    let mut gpi = gpi::Gpi::new(deck, rng, mc_alg);
 
     const EPISODES: i32 = 30_000;
 
-    println!("Playing {} episodes using Monte Carlo control...",
+    println!("Performing GPI over {} episodes using Monte Carlo...",
              EPISODES);
-    control.play_episodes(EPISODES);
+    gpi.play_episodes(EPISODES);
 
-    control.alg.print_optimal_values();
+    gpi.alg.print_optimal_values();
 }
 
 fn main() {
