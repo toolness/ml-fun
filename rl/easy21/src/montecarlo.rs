@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use rand::{thread_rng, ThreadRng, Rng};
+use rand::Rng;
 
 use game::{State, Action, Deck, Reward};
 use game::Action::*;
@@ -17,24 +17,24 @@ fn increment<T: Eq + Hash + Copy>(map: &mut HashMap<T, f32>, key: T,
     new_val
 }
 
-struct Control<T: Deck> {
+struct Control<T: Deck, U: Rng> {
     value_fn: ValueFn,
     times_visited: HashMap<State, f32>,
     total_visits: HashMap<(State, Action), Reward>,
     episodes: i32,
     deck: T,
-    rng: ThreadRng,
+    rng: U,
 }
 
-impl<T: Deck> Control<T> {
-    pub fn new(deck: T) -> Self {
+impl<T: Deck, U: Rng> Control<T, U> {
+    pub fn new(deck: T, rng: U) -> Self {
         Control {
             value_fn: HashMap::new(),
             times_visited: HashMap::new(),
             total_visits: HashMap::new(),
             episodes: 0,
             deck,
-            rng: thread_rng(),
+            rng,
         }
     }
 
@@ -90,6 +90,12 @@ impl<T: Deck> Control<T> {
         self.update_value_fn(&state_actions_visited, total_reward);
         self.episodes += 1;
     }
+
+    pub fn play_episodes(&mut self, count: i32) {
+        for _ in 0..count {
+            self.play_episode();
+        }
+    }
 }
 
 #[cfg(test)]
@@ -100,12 +106,12 @@ mod tests {
     use montecarlo::Control;
 
     #[test]
-    fn test_play_episode_works() {
+    fn test_play_episodes_works() {
         let deck = RngDeck::new(thread_rng());
-        let mut control = Control::new(deck);
+        let mut control = Control::new(deck, thread_rng());
 
-        control.play_episode();
+        control.play_episodes(3);
 
-        assert_eq!(control.episodes, 1);
+        assert_eq!(control.episodes, 3);
     }
 }
