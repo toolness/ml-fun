@@ -3,21 +3,13 @@
 // "plug in" different policy evaluation/improvement algorithms.
 
 use std::collections::HashMap;
-use std::hash::Hash;
 
 use rand::Rng;
 
 use game::{State, Action, Deck, Reward, MIN_SUM, MAX_SUM, MIN_CARD, MAX_CARD};
 use game::Action::*;
+use util::increment;
 
-
-pub fn increment<T: Eq + Hash + Copy>(map: &mut HashMap<T, f32>, key: T,
-                                  amount: f32) -> f32 {
-    let prev_val = *map.get(&key).unwrap_or(&0.0);
-    let new_val = prev_val + amount;
-    map.insert(key, new_val);
-    new_val
-}
 
 pub trait Alg {
     fn choose_best_action(&self, state: State) -> Action;

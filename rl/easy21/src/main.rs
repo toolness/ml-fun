@@ -4,6 +4,7 @@ extern crate clap;
 mod game;
 mod gpi;
 mod montecarlo;
+mod util;
 
 use rand::{SeedableRng, StdRng};
 use clap::{App, SubCommand};

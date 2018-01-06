@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use game::{State, Action, Reward};
 use game::Action::*;
-use gpi::{increment, Alg};
+use gpi::Alg;
+use util::increment;
 
 type ValueFn = HashMap<(State, Action), Reward>;
 
