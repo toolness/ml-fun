@@ -58,7 +58,7 @@ pub extern "C" fn run_monte_carlo(
 mod tests {
     use gpi::tests::DumbAlg;
     use game::Action;
-    use c_api::{OUTPUT_SIZE, write_expected_reward_matrix};
+    use c_api::*;
 
     #[test]
     fn test_write_expected_reward_matrix_works() {
@@ -70,5 +70,15 @@ mod tests {
         for i in 0..OUTPUT_SIZE {
             assert_eq!(output[i], 5.0);
         }
+    }
+
+    #[test]
+    fn test_run_monte_carlo_works() {
+        assert_eq!(run_monte_carlo(5, [0.0; OUTPUT_SIZE].as_mut_ptr()), 0);
+    }
+
+    #[test]
+    fn test_run_monte_carlo_returns_err_if_invalid_episodes() {
+        assert_eq!(run_monte_carlo(-1, [0.0; OUTPUT_SIZE].as_mut_ptr()), -1);
     }
 }
