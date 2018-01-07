@@ -1,5 +1,6 @@
 import ctypes as ct
 from pathlib import Path
+from enum import IntEnum
 
 import numpy as np
 
@@ -32,7 +33,35 @@ e21.run_sarsa.argtypes = [ct.c_int, ct.c_float, ct.POINTER(OUTPUT_ARRAY)]
 e21.run_sarsa.restype = ct.c_int
 
 
-def ctypes_array_to_numpy(ct_arr):
+class Action(IntEnum):
+    Hit = 0
+    Stick = 1
+
+
+class ExpectedRewardMatrix:
+    def __init__(self, raw_output: OUTPUT_ARRAY):
+        self.array = output_array_to_numpy(raw_output)\
+          .reshape((len(DEALER_RANGE), len(PLAYER_RANGE), NUM_ACTIONS))
+
+    def get_best_action(self, dealer: int, player: int) -> Action:
+        actions = self.array[dealer][player]
+        hit = actions[Action.Hit]
+        stick = actions[Action.Stick]
+        return Action.Hit if hit > stick else Action.Stick
+
+    def __str__(self):
+        lines = []
+        for player in reversed(range(len(PLAYER_RANGE))):
+            line = []
+            for dealer in range(len(DEALER_RANGE)):
+                action = self.get_best_action(dealer, player)
+                expectation = int(self.array[dealer][player][action] * 100)
+                line.append(f'{expectation:-4}')
+            lines.append(' '.join(line))
+        return '\n'.join(lines)
+
+
+def output_array_to_numpy(ct_arr: OUTPUT_ARRAY):
     # I was hoping there would be a way to do this that didn't involve
     # iterating in python-land, but whatever, it's a tiny array. More
     # details here: https://stackoverflow.com/a/4355701/2422398
@@ -46,27 +75,29 @@ def ctypes_array_to_numpy(ct_arr):
     return np_arr
 
 
-def run_monte_carlo(episodes):
+def run_monte_carlo(episodes: int) -> ExpectedRewardMatrix:
     output = OUTPUT_ARRAY()
     result = e21.run_monte_carlo(episodes, ct.byref(output))
 
     if result != 0:
         raise ValueError(f"run_monte_carlo failed with result {result}")
 
-    return ctypes_array_to_numpy(output)
+    return ExpectedRewardMatrix(output)
 
 
-def run_sarsa(episodes, lambda_val):
+def run_sarsa(episodes: int, lambda_val: float) -> ExpectedRewardMatrix:
     output = OUTPUT_ARRAY()
     result = e21.run_sarsa(episodes, lambda_val, ct.byref(output))
 
     if result != 0:
         raise ValueError(f"run_sarsa failed with result {result}")
 
-    return ctypes_array_to_numpy(output)
+    return ExpectedRewardMatrix(output)
 
 
 if __name__ == '__main__':
-    run_monte_carlo(10)
-    run_sarsa(5, 0.5)
-    print("Smoke tests passed!")
+    # These are basically smoke tests.
+    run_sarsa(1000, 0.5)
+    print("Output of monte carlo w/ 30,000 episodes:\n")
+    print(run_monte_carlo(30_000))
+    print("\nCompare this w/ the output of 'cargo run -- mc -e 30000'.")
