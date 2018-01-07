@@ -5,18 +5,18 @@ use gpi::Alg;
 use shortcuts;
 
 
-const NUM_ACTIONS: i32 = 2;
+const NUM_ACTIONS: usize = 2;
 
-const DEALER_SIZE: i32 = MAX_CARD + 1 - MIN_CARD;
+const DEALER_SIZE: usize = (MAX_CARD + 1 - MIN_CARD) as usize;
 
-const PLAYER_SIZE: i32 = MAX_SUM + 1 - MIN_SUM;
+const PLAYER_SIZE: usize = (MAX_SUM + 1 - MIN_SUM) as usize;
 
-const OUTPUT_SIZE: i32 = DEALER_SIZE * PLAYER_SIZE * NUM_ACTIONS;
+const OUTPUT_SIZE: usize = DEALER_SIZE * PLAYER_SIZE * NUM_ACTIONS;
 
 
 #[no_mangle]
 pub extern "C" fn get_output_size() -> c_int {
-    OUTPUT_SIZE
+    OUTPUT_SIZE as i32
 }
 
 fn write_expected_reward_matrix(alg: &Alg, output: *mut c_float) {
@@ -52,4 +52,23 @@ pub extern "C" fn run_monte_carlo(
     write_expected_reward_matrix(&gpi.policy.alg, output);
 
     0
+}
+
+#[cfg(test)]
+mod tests {
+    use gpi::tests::DumbAlg;
+    use game::Action;
+    use c_api::{OUTPUT_SIZE, write_expected_reward_matrix};
+
+    #[test]
+    fn test_write_expected_reward_matrix_works() {
+        let alg = DumbAlg { action: Action::Hit, reward: 5.0 };
+        let mut output = [0.0; OUTPUT_SIZE];
+
+        write_expected_reward_matrix(&alg, output.as_mut_ptr());
+
+        for i in 0..OUTPUT_SIZE {
+            assert_eq!(output[i], 5.0);
+        }
+    }
 }

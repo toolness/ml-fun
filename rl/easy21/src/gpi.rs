@@ -157,28 +157,34 @@ impl<T: Deck, U: Policy> Gpi<T, U> {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use game::{RngDeck, State, Action, Reward};
     use rand::thread_rng;
 
     use gpi::{Gpi, Alg, EpsilonGreedyPolicy};
 
-    struct DumbAlg {}
+    pub struct DumbAlg {
+        pub action: Action,
+        pub reward: Reward,
+    }
 
     impl Alg for DumbAlg {
         fn choose_best_action(&self, _: State) -> Action {
-            Action::Hit
+            self.action
         }
 
         fn get_expected_reward(&self, _: State, _: Action) -> Reward {
-            0.0
+            self.reward
         }
     }
 
     #[test]
     fn test_play_episodes_works() {
         let deck = RngDeck::new(thread_rng());
-        let policy = EpsilonGreedyPolicy::new(thread_rng(), DumbAlg {});
+        let policy = EpsilonGreedyPolicy::new(thread_rng(), DumbAlg {
+            action: Action::Hit,
+            reward: 0.0,
+        });
         let mut gpi = Gpi::new(deck, policy);
 
         gpi.play_episodes(3);
