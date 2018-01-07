@@ -19,6 +19,25 @@ pub extern "C" fn get_output_size() -> c_int {
     OUTPUT_SIZE
 }
 
+fn write_expected_reward_matrix(alg: &Alg, output: *mut c_float) {
+    let mut i = 0;
+
+    for dealer in MIN_CARD..MAX_CARD + 1 {
+        for player in MIN_SUM..MAX_SUM + 1 {
+            let state = State { dealer, player };
+            let hit = alg.get_expected_reward(state, Action::Hit);
+            let stick = alg.get_expected_reward(state, Action::Stick);
+
+            unsafe {
+                *output.offset(i) = hit;
+                *output.offset(i + 1) = stick;
+            }
+
+            i += 2;
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn run_monte_carlo(
     episodes: c_int,
@@ -30,23 +49,7 @@ pub extern "C" fn run_monte_carlo(
 
     let gpi = shortcuts::run_monte_carlo(episodes);
 
-    let mut i = 0;
-
-    for dealer in MIN_CARD..MAX_CARD + 1 {
-        for player in MIN_SUM..MAX_SUM + 1 {
-            let state = State { dealer, player };
-            let hit = gpi.policy.alg.get_expected_reward(state, Action::Hit);
-            let stick = gpi.policy.alg.get_expected_reward(state,
-                                                           Action::Stick);
-
-            unsafe {
-                *output.offset(i) = hit;
-                *output.offset(i + 1) = stick;
-            }
-
-            i += 2;
-        }
-    }
+    write_expected_reward_matrix(&gpi.policy.alg, output);
 
     0
 }
