@@ -3,7 +3,7 @@ extern crate clap;
 
 extern crate easy21;
 
-use clap::{App, Arg, SubCommand};
+use clap::{App, Arg, ArgMatches, SubCommand};
 
 use easy21::gpi::Alg;
 use easy21::shortcuts;
@@ -34,42 +34,63 @@ fn fail(msg: &str) {
     std::process::exit(1);
 }
 
+fn validate_episodes(v: String) -> Result<(), String> {
+    let episodes = v.parse::<i32>().unwrap_or(0);
+
+    return if episodes <= 0 {
+        Err(String::from("Episodes must be a number greater than 0."))
+    } else {
+        Ok(())
+    };
+}
+
+fn get_episodes(m: &ArgMatches) -> i32 {
+    m.value_of("episodes").unwrap().parse::<i32>().unwrap()
+}
+
+fn validate_lambda(v: String) -> Result<(), String> {
+    let lambda = v.parse::<f32>().unwrap_or(-1.0);
+
+    return if lambda < 0.0 || lambda > 1.0 {
+        Err(String::from("Lambda must be a float between 0 and 1."))
+    } else {
+        Ok(())
+    }
+}
+
+fn get_lambda(m: &ArgMatches) -> f32 {
+    m.value_of("lambda").unwrap().parse::<f32>().unwrap()
+}
+
 fn main() {
-    let matches = App::new("easy21")
-      .arg(Arg::with_name("episodes")
+    let episodes_arg = Arg::with_name("episodes")
         .short("e")
         .long("episodes")
         .help("number of episodes to play")
         .default_value("1000")
-        .takes_value(true))
+        .takes_value(true)
+        .validator(validate_episodes);
+
+    let matches = App::new("easy21")
       .subcommand(SubCommand::with_name("mc")
+        .arg(episodes_arg.clone())
         .about("runs monte carlo control"))
       .subcommand(SubCommand::with_name("sarsa")
         .about("runs sarsa lambda control")
+        .arg(episodes_arg.clone())
         .arg(Arg::with_name("lambda")
           .short("l")
           .long("lambda")
           .help("lambda setting")
           .default_value("0.5")
-          .takes_value(true)))
+          .takes_value(true)
+          .validator(validate_lambda)))
       .get_matches();
 
-    let episodes = matches.value_of("episodes")
-      .unwrap().parse::<i32>().unwrap_or(0);
-
-    if episodes <= 0 {
-        fail("Episodes must be a number greater than 0.");
-    }
-
-    if let Some(_) = matches.subcommand_matches("mc") {
-        run_monte_carlo(episodes);
+    if let Some(submatches) = matches.subcommand_matches("mc") {
+        run_monte_carlo(get_episodes(&submatches));
     } else if let Some(submatches) = matches.subcommand_matches("sarsa") {
-        let lambda = submatches.value_of("lambda")
-          .unwrap().parse::<f32>().unwrap_or(-1.0);
-        if lambda < 0.0 || lambda > 1.0 {
-            fail("Lambda must be a float between 0 and 1.");
-        }
-        run_sarsa(episodes, lambda);
+        run_sarsa(get_episodes(&submatches), get_lambda(&submatches));
     } else {
         fail("Unknown command. Try running this program with '--help'.");
     }
