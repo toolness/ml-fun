@@ -28,8 +28,9 @@ pub trait Alg {
     // A hook that's called whenever an episode transitions from one state
     // to another, as the result of an action.
     fn on_episode_step(&mut self, state: State, action: Action,
-                       reward: Reward, next_state: State) {
-        let _ = (state, action, reward, next_state);
+                       reward: Reward, next_state: State,
+                       next_action: Action) {
+        let _ = (state, action, reward, next_state, next_action);
     }
 
     // A hook that's called whenever an episode ends. Implementations can
@@ -120,7 +121,27 @@ impl<T: Rng, U: Alg> Policy for EpsilonGreedyPolicy<T, U> {
     fn on_episode_step(&mut self, state: State, action: Action,
                        reward: Reward, next_state: State) {
         increment(&mut self.times_visited, state, 1.0);
-        self.alg.on_episode_step(state, action, reward, next_state);
+
+        // Argh, I wanted to just pass the policy in as the last argument, so
+        // that the algorithm (e.g. Sarsa) could calculate the next action
+        // only if it needed to, but that raised an error complaining that
+        // `EpsilonGreedyPolicy` didn't implement `Policy`.
+        //
+        // Then I tried changing the last parameter to just being
+        // `FnMut(State) -> Action`, but that raised errors with the
+        // borrow checker when I tried passing `self.choose_action`.
+        //
+        // The only remaining option is to *always* calculate the next action,
+        // and pass it to the algorithm, which can use it if needed.
+        //
+        // It should also be noted that tinkering with the calling
+        // convention of `Alg.on_episode_step()` is difficult once we
+        // have multiple trait implementations in place, since we have to
+        // change the trait definition *and* every implementation site
+        // just to see what the borrow checker thinks.
+        let next_action = self.choose_action(next_state);
+        self.alg.on_episode_step(state, action, reward, next_state,
+                                 next_action);
     }
 
     fn on_episode_end(&mut self) {
