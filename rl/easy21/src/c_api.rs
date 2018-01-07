@@ -25,6 +25,10 @@ pub extern "C" fn run_monte_carlo(
     episodes: c_int,
     output: *mut c_float
 ) -> i32 {
+    if episodes <= 0 {
+        return -1;
+    }
+
     let seed: &[_] = &[1, 2, 3, 4];
     let rng: StdRng = SeedableRng::from_seed(seed);
     let deck = RngDeck::new(rng);
