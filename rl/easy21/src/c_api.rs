@@ -1,9 +1,8 @@
 use libc::{c_int, c_float};
-use rand::{SeedableRng, StdRng};
 
-use game::{State, Action, RngDeck, MIN_SUM, MAX_SUM, MIN_CARD, MAX_CARD};
-use gpi::{Gpi, Alg, EpsilonGreedyPolicy};
-use montecarlo::MonteCarlo;
+use game::{State, Action, MIN_SUM, MAX_SUM, MIN_CARD, MAX_CARD};
+use gpi::Alg;
+use shortcuts;
 
 
 const NUM_ACTIONS: i32 = 2;
@@ -29,14 +28,7 @@ pub extern "C" fn run_monte_carlo(
         return -1;
     }
 
-    let seed: &[_] = &[1, 2, 3, 4];
-    let rng: StdRng = SeedableRng::from_seed(seed);
-    let deck = RngDeck::new(rng);
-    let mc_alg = MonteCarlo::new();
-    let policy = EpsilonGreedyPolicy::new(rng, mc_alg);
-    let mut gpi = Gpi::new(deck, policy);
-
-    gpi.play_episodes(episodes);
+    let gpi = shortcuts::run_monte_carlo(episodes);
 
     let mut i = 0;
 
@@ -44,7 +36,8 @@ pub extern "C" fn run_monte_carlo(
         for player in MIN_SUM..MAX_SUM + 1 {
             let state = State { dealer, player };
             let hit = gpi.policy.alg.get_expected_reward(state, Action::Hit);
-            let stick = gpi.policy.alg.get_expected_reward(state, Action::Stick);
+            let stick = gpi.policy.alg.get_expected_reward(state,
+                                                           Action::Stick);
 
             unsafe {
                 *output.offset(i) = hit;

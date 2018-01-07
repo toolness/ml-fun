@@ -3,24 +3,16 @@ extern crate clap;
 
 extern crate easy21;
 
-use rand::{SeedableRng, StdRng};
 use clap::{App, Arg, SubCommand};
 
-use easy21::gpi::{Gpi, Alg, EpsilonGreedyPolicy};
-use easy21::montecarlo::MonteCarlo;
-use easy21::game::RngDeck;
+use easy21::gpi::Alg;
+use easy21::shortcuts;
 
 fn run_monte_carlo(episodes: i32) {
-    let seed: &[_] = &[1, 2, 3, 4];
-    let rng: StdRng = SeedableRng::from_seed(seed);
-    let deck = RngDeck::new(rng);
-    let mc_alg = MonteCarlo::new();
-    let policy = EpsilonGreedyPolicy::new(rng, mc_alg);
-    let mut gpi = Gpi::new(deck, policy);
-
     println!("Performing GPI over {} episodes using Monte Carlo...",
              episodes);
-    gpi.play_episodes(episodes);
+
+    let gpi = shortcuts::run_monte_carlo(episodes);
 
     gpi.policy.alg.print_optimal_values();
 }
