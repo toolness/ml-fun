@@ -3,6 +3,7 @@ use libc::{c_int, c_float};
 use game::{State, Action, MIN_SUM, MAX_SUM, MIN_CARD, MAX_CARD};
 use gpi::Alg;
 use shortcuts;
+use validators;
 
 
 const NUM_ACTIONS: usize = 2;
@@ -43,7 +44,7 @@ pub extern "C" fn run_monte_carlo(
     episodes: c_int,
     output: *mut c_float
 ) -> i32 {
-    if episodes <= 0 {
+    if !validators::episodes(episodes) {
         return -1;
     }
 

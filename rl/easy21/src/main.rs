@@ -7,6 +7,7 @@ use clap::{App, Arg, ArgMatches, SubCommand};
 
 use easy21::gpi::Alg;
 use easy21::shortcuts;
+use easy21::validators;
 
 fn run_monte_carlo(episodes: i32) {
     println!("Performing GPI over {} episodes using Monte Carlo...",
@@ -30,12 +31,10 @@ fn run_sarsa(episodes: i32, lambda: f32) {
 }
 
 fn validate_episodes(v: String) -> Result<(), String> {
-    let episodes = v.parse::<i32>().unwrap_or(0);
-
-    return if episodes <= 0 {
-        Err(String::from("Episodes must be a number greater than 0."))
-    } else {
+    return if validators::episodes(v.parse::<i32>().unwrap_or(-1)) {
         Ok(())
+    } else {
+        Err(String::from("Episodes must be a number greater than 0."))
     };
 }
 
@@ -44,12 +43,10 @@ fn get_episodes(m: &ArgMatches) -> i32 {
 }
 
 fn validate_lambda(v: String) -> Result<(), String> {
-    let lambda = v.parse::<f32>().unwrap_or(-1.0);
-
-    return if lambda < 0.0 || lambda > 1.0 {
-        Err(String::from("Lambda must be a float between 0 and 1."))
-    } else {
+    return if validators::lambda(v.parse::<f32>().unwrap_or(-1.0)) {
         Ok(())
+    } else {
+        Err(String::from("Lambda must be a float between 0 and 1."))
     }
 }
 
