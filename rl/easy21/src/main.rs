@@ -1,21 +1,21 @@
 extern crate rand;
 extern crate clap;
 
-mod game;
-mod gpi;
-mod montecarlo;
-mod util;
+extern crate easy21;
 
 use rand::{SeedableRng, StdRng};
 use clap::{App, Arg, SubCommand};
-use gpi::Alg;
+
+use easy21::gpi::{Gpi, Alg};
+use easy21::montecarlo::MonteCarlo;
+use easy21::game::RngDeck;
 
 fn run_monte_carlo(episodes: i32) {
     let seed: &[_] = &[1, 2, 3, 4];
     let rng: StdRng = SeedableRng::from_seed(seed);
-    let deck = game::RngDeck::new(rng);
-    let mc_alg = montecarlo::MonteCarlo::new();
-    let mut gpi = gpi::Gpi::new(deck, rng, mc_alg);
+    let deck = RngDeck::new(rng);
+    let mc_alg = MonteCarlo::new();
+    let mut gpi = Gpi::new(deck, rng, mc_alg);
 
     println!("Performing GPI over {} episodes using Monte Carlo...",
              episodes);
