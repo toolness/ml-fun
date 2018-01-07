@@ -43,7 +43,7 @@ pub extern "C" fn run_monte_carlo(
 
             unsafe {
                 *output.offset(i) = hit;
-                *output.offset(i) = stick;
+                *output.offset(i + 1) = stick;
             }
 
             i += 2;
