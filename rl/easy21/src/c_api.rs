@@ -55,6 +55,27 @@ pub extern "C" fn run_monte_carlo(
     0
 }
 
+#[no_mangle]
+pub extern "C" fn run_sarsa(
+    episodes: c_int,
+    lambda: c_float,
+    output: *mut c_float
+) -> i32 {
+    if !validators::episodes(episodes) {
+        return -1;
+    }
+
+    if !validators::lambda(lambda) {
+        return -1;
+    }
+
+    let gpi = shortcuts::run_sarsa(episodes, lambda);
+
+    write_expected_reward_matrix(&gpi.policy.alg, output);
+
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use gpi::tests::DumbAlg;
