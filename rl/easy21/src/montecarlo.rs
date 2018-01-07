@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use game::{State, Action, Reward};
 use game::Action::*;
 use gpi::Alg;
-use util::increment;
+use util::VaryingStepSizer;
 
 type ValueFn = HashMap<(State, Action), Reward>;
 
 pub struct MonteCarlo {
     value_fn: ValueFn,
-    total_visits: HashMap<(State, Action), Reward>,
+    step_sizer: VaryingStepSizer,
     reward_this_episode: Reward,
     visited_this_episode: HashMap<(State, Action), bool>,
 }
@@ -18,7 +18,7 @@ impl MonteCarlo {
     pub fn new() -> Self {
         MonteCarlo {
             value_fn: HashMap::new(),
-            total_visits: HashMap::new(),
+            step_sizer: VaryingStepSizer::new(),
             reward_this_episode: 0.0,
             visited_this_episode: HashMap::new(),
         }
@@ -52,11 +52,9 @@ impl Alg for MonteCarlo {
 
     fn on_episode_end(&mut self) {
         for &(state, action) in self.visited_this_episode.keys() {
-            let visits = increment(&mut self.total_visits, (state, action),
-                                   1.0);
             let old_value = *self.value_fn.get(&(state, action))
               .unwrap_or(&0.0);
-            let step_size = 1.0 / visits;
+            let step_size = self.step_sizer.update(state, action);
             let new_value = old_value + step_size *
                             (self.reward_this_episode - old_value);
             self.value_fn.insert((state, action), new_value);

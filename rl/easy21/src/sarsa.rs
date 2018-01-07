@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use game::{State, Action, Reward};
 use game::Action::*;
 use gpi::Alg;
-use util::increment;
+use util::{increment, VaryingStepSizer};
 
 
 type EligibilityHash = HashMap<(State, Action), f32>;
@@ -11,7 +11,7 @@ type ValueFn = HashMap<(State, Action), Reward>;
 
 pub struct SarsaLambda {
     value_fn: ValueFn,
-    total_visits: HashMap<(State, Action), f32>,
+    step_sizer: VaryingStepSizer,
     traces: EligibilityHash,
     lambda: f32,
 }
@@ -20,7 +20,7 @@ impl SarsaLambda {
     pub fn new(lambda: f32) -> Self {
         SarsaLambda {
             value_fn: HashMap::new(),
-            total_visits: HashMap::new(),
+            step_sizer: VaryingStepSizer::new(),
             traces: HashMap::new(),
             lambda,
         }
@@ -45,9 +45,7 @@ impl Alg for SarsaLambda {
     fn on_episode_step(&mut self, state: State, action: Action,
                        reward: Reward, next_state: State,
                        next_action: Action) {
-        let visits = increment(&mut self.total_visits, (state, action),
-                               1.0);
-        let step_size = 1.0 / visits;
+        let step_size = self.step_sizer.update(state, action);
         let td_error = reward +
                        self.get_expected_reward(next_state, next_action) -
                        self.get_expected_reward(state, action);
