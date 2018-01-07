@@ -29,11 +29,6 @@ fn run_sarsa(episodes: i32, lambda: f32) {
     gpi.policy.alg.print_optimal_values();
 }
 
-fn fail(msg: &str) {
-    eprintln!("{}", msg);
-    std::process::exit(1);
-}
-
 fn validate_episodes(v: String) -> Result<(), String> {
     let episodes = v.parse::<i32>().unwrap_or(0);
 
@@ -92,6 +87,8 @@ fn main() {
     } else if let Some(submatches) = matches.subcommand_matches("sarsa") {
         run_sarsa(get_episodes(&submatches), get_lambda(&submatches));
     } else {
-        fail("Unknown command. Try running this program with '--help'.");
+        eprintln!("error: Invalid subcommand\n\n{}\n", matches.usage());
+        eprintln!("For more information try --help");
+        std::process::exit(1);
     }
 }
