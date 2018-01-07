@@ -43,7 +43,7 @@ pub trait Alg {
                 let action = self.choose_best_action(state);
                 let value = self.get_expected_reward(state, action);
                 let ivalue = (value * 100.0) as i32;
-                print!("{:3} ", ivalue);
+                print!("{:4} ", ivalue);
             }
             println!("  <- player sum = {}", player);
         }
@@ -53,9 +53,9 @@ pub trait Alg {
         println!();
         for dealer in dealer_rng {
             if dealer == 1 {
-                print!("  A ");
+                print!("   A ");
             } else {
-                print!("{:3} ", dealer);
+                print!("{:4} ", dealer);
             }
         }
         println!("  <- dealer showing");
