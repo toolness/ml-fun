@@ -10,6 +10,8 @@ type ValueFn = HashMap<(State, Action), Reward>;
 pub struct MonteCarlo {
     value_fn: ValueFn,
     total_visits: HashMap<(State, Action), Reward>,
+    reward_this_episode: Reward,
+    visited_this_episode: HashMap<(State, Action), bool>,
 }
 
 impl MonteCarlo {
@@ -17,6 +19,8 @@ impl MonteCarlo {
         MonteCarlo {
             value_fn: HashMap::new(),
             total_visits: HashMap::new(),
+            reward_this_episode: 0.0,
+            visited_this_episode: HashMap::new(),
         }
     }
 }
@@ -32,21 +36,28 @@ impl Alg for MonteCarlo {
         *self.value_fn.get(&(state, action)).unwrap_or(&0.0)
     }
 
-    fn on_episode_end(
-        &mut self,
-        visited: &HashMap<(State, Action), f32>,
-        reward: Reward
-    ) {
-        for &(state, action) in visited.keys() {
-            // Even though the value of `visited` tells us how many times
-            // the state/action pair was visited, we only care about
-            // the *first* time it was visited in an episode.
+    fn on_episode_begin(&mut self) {
+        self.reward_this_episode = 0.0;
+        self.visited_this_episode.drain();
+    }
+
+    fn on_episode_step(&mut self, state: State, action: Action,
+                       reward: Reward, _next_state: State) {
+        // We only care about the *first* time a state/action pair
+        // was visited in an episode.
+        self.visited_this_episode.entry((state, action)).or_insert(true);
+        self.reward_this_episode += reward;
+    }
+
+    fn on_episode_end(&mut self) {
+        for &(state, action) in self.visited_this_episode.keys() {
             let visits = increment(&mut self.total_visits, (state, action),
                                    1.0);
             let old_value = *self.value_fn.get(&(state, action))
               .unwrap_or(&0.0);
             let step_size = 1.0 / visits;
-            let new_value = old_value + step_size * (reward - old_value);
+            let new_value = old_value + step_size *
+                            (self.reward_this_episode - old_value);
             self.value_fn.insert((state, action), new_value);
         }
     }

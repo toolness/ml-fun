@@ -21,16 +21,20 @@ pub trait Alg {
     // at the given state.
     fn get_expected_reward(&self, state: State, action: Action) -> Reward;
 
+    // A hook that's called whenever an episode begins.
+    fn on_episode_begin(&mut self) {
+    }
+
+    // A hook that's called whenever an episode transitions from one state
+    // to another, as the result of an action.
+    fn on_episode_step(&mut self, state: State, action: Action,
+                       reward: Reward, next_state: State) {
+        let _ = (state, action, reward, next_state);
+    }
+
     // A hook that's called whenever an episode ends. Implementations can
     // use this to e.g. update their value functions.
-    //
-    // `visited` is a mapping that indicates how many times a given
-    // state/action pair was visited during the episode.
-    //
-    // `reward` is the total reward accrued during the episode.
-    fn on_episode_end(&mut self, visited: &HashMap<(State, Action), f32>,
-                      reward: Reward) {
-        let _ = (visited, reward);
+    fn on_episode_end(&mut self) {
     }
 
     // Print the expected reward for every state given that we
@@ -65,10 +69,12 @@ pub trait Alg {
 pub trait Policy {
     fn choose_action(&mut self, state: State) -> Action;
 
-    fn on_state_visited(&mut self, state: State);
+    fn on_episode_begin(&mut self);
 
-    fn on_episode_end(&mut self, visited: &HashMap<(State, Action), f32>,
-                      reward: Reward);
+    fn on_episode_step(&mut self, state: State, action: Action,
+                       reward: Reward, next_state: State);
+
+    fn on_episode_end(&mut self);
 }
 
 pub struct EpsilonGreedyPolicy<T: Rng, U: Alg> {
@@ -107,13 +113,18 @@ impl<T: Rng, U: Alg> Policy for EpsilonGreedyPolicy<T, U> {
         }
     }
 
-    fn on_state_visited(&mut self, state: State) {
-        increment(&mut self.times_visited, state, 1.0);
+    fn on_episode_begin(&mut self) {
+        self.alg.on_episode_begin();
     }
 
-    fn on_episode_end(&mut self, visited: &HashMap<(State, Action), f32>,
-                      reward: Reward) {
-        self.alg.on_episode_end(visited, reward);
+    fn on_episode_step(&mut self, state: State, action: Action,
+                       reward: Reward, next_state: State) {
+        increment(&mut self.times_visited, state, 1.0);
+        self.alg.on_episode_step(state, action, reward, next_state);
+    }
+
+    fn on_episode_end(&mut self) {
+        self.alg.on_episode_end();
     }
 }
 
@@ -133,19 +144,18 @@ impl<T: Deck, U: Policy> Gpi<T, U> {
     }
 
     pub fn play_episode(&mut self) {
-        let mut total_reward = 0.0;
-        let mut state_actions_visited = HashMap::new();
         let mut state = State::new(&mut self.deck);
+
+        self.policy.on_episode_begin();
 
         while !state.is_terminal() {
             let action = self.policy.choose_action(state);
             let (next_state, reward) = state.step(&mut self.deck, action);
-            self.policy.on_state_visited(state);
-            increment(&mut state_actions_visited, (state, action), 1.0);
-            total_reward += reward;
+            self.policy.on_episode_step(state, action, reward, next_state);
             state = next_state;
         }
-        self.policy.on_episode_end(&state_actions_visited, total_reward);
+
+        self.policy.on_episode_end();
         self.episodes += 1;
     }
 
