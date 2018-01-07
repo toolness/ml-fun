@@ -6,7 +6,7 @@ extern crate easy21;
 use rand::{SeedableRng, StdRng};
 use clap::{App, Arg, SubCommand};
 
-use easy21::gpi::{Gpi, Alg};
+use easy21::gpi::{Gpi, Alg, EpsilonGreedyPolicy};
 use easy21::montecarlo::MonteCarlo;
 use easy21::game::RngDeck;
 
@@ -15,13 +15,14 @@ fn run_monte_carlo(episodes: i32) {
     let rng: StdRng = SeedableRng::from_seed(seed);
     let deck = RngDeck::new(rng);
     let mc_alg = MonteCarlo::new();
-    let mut gpi = Gpi::new(deck, rng, mc_alg);
+    let policy = EpsilonGreedyPolicy::new(rng, mc_alg);
+    let mut gpi = Gpi::new(deck, policy);
 
     println!("Performing GPI over {} episodes using Monte Carlo...",
              episodes);
     gpi.play_episodes(episodes);
 
-    gpi.alg.print_optimal_values();
+    gpi.policy.alg.print_optimal_values();
 }
 
 fn fail(msg: &str) {

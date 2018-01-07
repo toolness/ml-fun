@@ -62,20 +62,25 @@ pub trait Alg {
     }
 }
 
-pub struct Gpi<T: Deck, U: Rng, V: Alg> {
-    times_visited: HashMap<State, f32>,
-    episodes: i32,
-    deck: T,
-    rng: U,
-    pub alg: V,
+pub trait Policy {
+    fn choose_action(&mut self, state: State) -> Action;
+
+    fn on_state_visited(&mut self, state: State);
+
+    fn on_episode_end(&mut self, visited: &HashMap<(State, Action), f32>,
+                      reward: Reward);
 }
 
-impl<T: Deck, U: Rng, V: Alg> Gpi<T, U, V> {
-    pub fn new(deck: T, rng: U, alg: V) -> Self {
-        Gpi {
+pub struct EpsilonGreedyPolicy<T: Rng, U: Alg> {
+    times_visited: HashMap<State, f32>,
+    rng: T,
+    pub alg: U,
+}
+
+impl<T: Rng, U: Alg> EpsilonGreedyPolicy<T, U> {
+    pub fn new(rng: T, alg: U) -> Self {
+        EpsilonGreedyPolicy {
             times_visited: HashMap::new(),
-            episodes: 0,
-            deck,
             rng,
             alg,
         }
@@ -91,6 +96,41 @@ impl<T: Deck, U: Rng, V: Alg> Gpi<T, U, V> {
         let epsilon = n_0 / (n_0 + visited);
         self.rng.next_f32() < epsilon
     }
+}
+
+impl<T: Rng, U: Alg> Policy for EpsilonGreedyPolicy<T, U> {
+    fn choose_action(&mut self, state: State) -> Action {
+        if self.should_explore(state) {
+            self.exploratory_action()
+        } else {
+            self.alg.choose_best_action(state)
+        }
+    }
+
+    fn on_state_visited(&mut self, state: State) {
+        increment(&mut self.times_visited, state, 1.0);
+    }
+
+    fn on_episode_end(&mut self, visited: &HashMap<(State, Action), f32>,
+                      reward: Reward) {
+        self.alg.on_episode_end(visited, reward);
+    }
+}
+
+pub struct Gpi<T: Deck, U: Policy> {
+    episodes: i32,
+    deck: T,
+    pub policy: U,
+}
+
+impl<T: Deck, U: Policy> Gpi<T, U> {
+    pub fn new(deck: T, policy: U) -> Self {
+        Gpi {
+            episodes: 0,
+            deck,
+            policy,
+        }
+    }
 
     pub fn play_episode(&mut self) {
         let mut total_reward = 0.0;
@@ -98,18 +138,14 @@ impl<T: Deck, U: Rng, V: Alg> Gpi<T, U, V> {
         let mut state = State::new(&mut self.deck);
 
         while !state.is_terminal() {
-            let action = if self.should_explore(state) {
-                self.exploratory_action()
-            } else {
-                self.alg.choose_best_action(state)
-            };
+            let action = self.policy.choose_action(state);
             let (next_state, reward) = state.step(&mut self.deck, action);
-            increment(&mut self.times_visited, state, 1.0);
+            self.policy.on_state_visited(state);
             increment(&mut state_actions_visited, (state, action), 1.0);
             total_reward += reward;
             state = next_state;
         }
-        self.alg.on_episode_end(&state_actions_visited, total_reward);
+        self.policy.on_episode_end(&state_actions_visited, total_reward);
         self.episodes += 1;
     }
 
@@ -125,7 +161,7 @@ mod tests {
     use game::{RngDeck, State, Action, Reward};
     use rand::thread_rng;
 
-    use gpi::{Gpi, Alg};
+    use gpi::{Gpi, Alg, EpsilonGreedyPolicy};
 
     struct DumbAlg {}
 
@@ -142,7 +178,8 @@ mod tests {
     #[test]
     fn test_play_episodes_works() {
         let deck = RngDeck::new(thread_rng());
-        let mut gpi = Gpi::new(deck, thread_rng(), DumbAlg {});
+        let policy = EpsilonGreedyPolicy::new(thread_rng(), DumbAlg {});
+        let mut gpi = Gpi::new(deck, policy);
 
         gpi.play_episodes(3);
 
