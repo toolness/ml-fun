@@ -69,7 +69,7 @@ class ExpectedRewardMatrix:
         ax.set_ylabel('Player sum')
         ax.set_zlabel('Expected reward')
 
-        return ax.plot_wireframe(X, Y, Z, color='black')
+        ax.plot_wireframe(X, Y, Z, color='black')
 
     def __str__(self):
         lines = []
