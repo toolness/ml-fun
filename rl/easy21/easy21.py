@@ -3,6 +3,8 @@ from pathlib import Path
 from enum import IntEnum
 
 import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
 
 
 MY_DIR = Path(__file__).parent.resolve()
@@ -49,6 +51,10 @@ class ExpectedRewardMatrix:
         stick = actions[Action.Stick]
         return Action.Hit if hit > stick else Action.Stick
 
+    def get_optimal_reward(self, dealer: int, player: int) -> float:
+        action = self.get_best_action(dealer, player)
+        return self.array[dealer][player][action]
+
     def get_max_diff(self, other: 'ExpectedRewardMatrix') -> float:
         diff = np.abs(self.array.flatten() - other.array.flatten())
         return np.max(diff)
@@ -57,13 +63,30 @@ class ExpectedRewardMatrix:
         sq_err = np.square(self.array.flatten() - other.array.flatten())
         return np.average(sq_err)
 
+    def plot_optimal_reward(self):
+        def f(dealer, player):
+            return self.get_optimal_reward(dealer - 1, player - 1)
+
+        x = np.array(DEALER_RANGE)
+        y = np.array(PLAYER_RANGE)
+
+        X, Y = np.meshgrid(x, y)
+        Z = np.vectorize(f)(X, Y)
+
+        ax = plt.axes(projection='3d')
+        ax.set_xlabel('Dealer showing')
+        ax.set_ylabel('Player sum')
+        ax.set_zlabel('Expected reward')
+
+        return ax.plot_wireframe(X, Y, Z, color='black')
+
     def __str__(self):
         lines = []
         for player in reversed(range(len(PLAYER_RANGE))):
             line = []
             for dealer in range(len(DEALER_RANGE)):
-                action = self.get_best_action(dealer, player)
-                expectation = int(self.array[dealer][player][action] * 100)
+                expectation = self.get_optimal_reward(dealer, player)
+                expectation = int(expectation * 100)
                 line.append(f'{expectation:-4}')
             lines.append(' '.join(line))
         return '\n'.join(lines)
