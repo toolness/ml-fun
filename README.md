@@ -9,6 +9,7 @@ Here's what I've got so far:
 * [Super simple neural net](super-simple-nn.ipynb) - A ridiculously simple neural net.
 * [Architecture convnet](architecture-convnet/) - A convolutional neural net to recognize different architectural styles in buildings.
 * [Tic-tac-toe RL](tic-tac-toe-rl/) - An attempt to implement a model that learns to play tic tac toe via reinforcement learning.
+* [Easy21](rl/easy21/) - A reinforcement learning assignment to optimally play a variant of Blackjack.
 
 ## Running locally
 
