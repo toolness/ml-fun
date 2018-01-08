@@ -44,16 +44,10 @@ class ExpectedRewardMatrix:
     def __init__(self, raw_output: OUTPUT_ARRAY):
         self.array = output_array_to_numpy(raw_output)\
           .reshape((len(DEALER_RANGE), len(PLAYER_RANGE), NUM_ACTIONS))
-
-    def get_best_action(self, dealer: int, player: int) -> Action:
-        actions = self.array[dealer][player]
-        hit = actions[Action.Hit]
-        stick = actions[Action.Stick]
-        return Action.Hit if hit > stick else Action.Stick
+        self.optimal_array = np.max(self.array, axis=2)
 
     def get_optimal_reward(self, dealer: int, player: int) -> float:
-        action = self.get_best_action(dealer, player)
-        return self.array[dealer][player][action]
+        return self.optimal_array[dealer - 1][player - 1]
 
     def get_max_diff(self, other: 'ExpectedRewardMatrix') -> float:
         diff = np.abs(self.array.flatten() - other.array.flatten())
@@ -64,14 +58,11 @@ class ExpectedRewardMatrix:
         return np.average(sq_err)
 
     def plot_optimal_reward(self):
-        def f(dealer, player):
-            return self.get_optimal_reward(dealer - 1, player - 1)
-
         x = np.array(DEALER_RANGE)
         y = np.array(PLAYER_RANGE)
 
         X, Y = np.meshgrid(x, y)
-        Z = np.vectorize(f)(X, Y)
+        Z = np.vectorize(self.get_optimal_reward)(X, Y)
 
         ax = plt.axes(projection='3d')
         ax.set_xlabel('Dealer showing')
@@ -85,7 +76,7 @@ class ExpectedRewardMatrix:
         for player in reversed(range(len(PLAYER_RANGE))):
             line = []
             for dealer in range(len(DEALER_RANGE)):
-                expectation = self.get_optimal_reward(dealer, player)
+                expectation = self.optimal_array[dealer][player]
                 expectation = int(expectation * 100)
                 line.append(f'{expectation:-4}')
             lines.append(' '.join(line))
@@ -136,7 +127,6 @@ def run_smoke_tests():
     small = run_monte_carlo(30)
     assert big.get_max_diff(small) > 0
     assert big.get_mean_squared_err(small) > 0
-
 
 if __name__ == '__main__':
     run_smoke_tests()
