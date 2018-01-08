@@ -53,6 +53,10 @@ class ExpectedRewardMatrix:
         diff = np.abs(self.array.flatten() - other.array.flatten())
         return np.max(diff)
 
+    def get_mean_squared_err(self, other: 'ExpectedRewardMatrix') -> float:
+        sq_err = np.square(self.array.flatten() - other.array.flatten())
+        return np.average(sq_err)
+
     def __str__(self):
         lines = []
         for player in reversed(range(len(PLAYER_RANGE))):
@@ -103,6 +107,10 @@ if __name__ == '__main__':
     # These are basically smoke tests.
     run_sarsa(1000, 0.5)
     print("Output of monte carlo w/ 30,000 episodes:\n")
-    print(run_monte_carlo(30_000))
+    big = run_monte_carlo(30_000)
+    print(big)
     print("\nCompare this w/ the output of 'cargo run -- mc -e 30000'.")
-    assert run_monte_carlo(300).get_max_diff(run_monte_carlo(30)) > 0
+
+    small = run_monte_carlo(30)
+    assert big.get_max_diff(small) > 0
+    assert big.get_mean_squared_err(small) > 0
