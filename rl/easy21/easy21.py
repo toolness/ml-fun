@@ -103,8 +103,7 @@ def run_sarsa(episodes: int, lambda_val: float) -> ExpectedRewardMatrix:
     return ExpectedRewardMatrix(output)
 
 
-if __name__ == '__main__':
-    # These are basically smoke tests.
+def run_smoke_tests():
     run_sarsa(1000, 0.5)
     print("Output of monte carlo w/ 30,000 episodes:\n")
     big = run_monte_carlo(30_000)
@@ -114,3 +113,7 @@ if __name__ == '__main__':
     small = run_monte_carlo(30)
     assert big.get_max_diff(small) > 0
     assert big.get_mean_squared_err(small) > 0
+
+
+if __name__ == '__main__':
+    run_smoke_tests()
