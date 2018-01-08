@@ -49,6 +49,10 @@ class ExpectedRewardMatrix:
         stick = actions[Action.Stick]
         return Action.Hit if hit > stick else Action.Stick
 
+    def get_max_diff(self, other: 'ExpectedRewardMatrix') -> float:
+        diff = np.abs(self.array.flatten() - other.array.flatten())
+        return np.max(diff)
+
     def __str__(self):
         lines = []
         for player in reversed(range(len(PLAYER_RANGE))):
@@ -101,3 +105,4 @@ if __name__ == '__main__':
     print("Output of monte carlo w/ 30,000 episodes:\n")
     print(run_monte_carlo(30_000))
     print("\nCompare this w/ the output of 'cargo run -- mc -e 30000'.")
+    assert run_monte_carlo(300).get_max_diff(run_monte_carlo(30)) > 0
