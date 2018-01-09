@@ -78,10 +78,17 @@ pub trait Policy {
     fn on_episode_end(&mut self);
 }
 
+#[derive(Debug, PartialEq)]
+enum EpsilonType {
+    Varying,
+    Constant(f32),
+}
+
 pub struct EpsilonGreedyPolicy<T: Rng, U: Alg> {
     times_visited: HashMap<State, f32>,
     rng: T,
     pub alg: U,
+    epsilon: EpsilonType,
 }
 
 impl<T: Rng, U: Alg> EpsilonGreedyPolicy<T, U> {
@@ -90,7 +97,13 @@ impl<T: Rng, U: Alg> EpsilonGreedyPolicy<T, U> {
             times_visited: HashMap::new(),
             rng,
             alg,
+            epsilon: EpsilonType::Varying,
         }
+    }
+
+    fn with_constant_epsilon(mut self, value: f32) -> Self {
+        self.epsilon = EpsilonType::Constant(value);
+        self
     }
 
     fn exploratory_action(&mut self) -> Action {
@@ -98,9 +111,16 @@ impl<T: Rng, U: Alg> EpsilonGreedyPolicy<T, U> {
     }
 
     fn should_explore(&mut self, state: State) -> bool {
-        let n_0 = 100.0;
-        let visited = *self.times_visited.get(&state).unwrap_or(&0.0);
-        let epsilon = n_0 / (n_0 + visited);
+        let epsilon = match self.epsilon {
+            EpsilonType::Varying => {
+                let n_0 = 100.0;
+                let visited = *self.times_visited.get(&state).unwrap_or(&0.0);
+                n_0 / (n_0 + visited)
+            },
+            EpsilonType::Constant(value) => {
+                value
+            }
+        };
         self.rng.next_f32() < epsilon
     }
 }
@@ -120,7 +140,9 @@ impl<T: Rng, U: Alg> Policy for EpsilonGreedyPolicy<T, U> {
 
     fn on_episode_step(&mut self, state: State, action: Action,
                        reward: Reward, next_state: State) {
-        increment(&mut self.times_visited, state, 1.0);
+        if self.epsilon == EpsilonType::Varying {
+            increment(&mut self.times_visited, state, 1.0);
+        }
 
         // Argh, I wanted to just pass the policy in as the last argument, so
         // that the algorithm (e.g. Sarsa) could calculate the next action
@@ -192,7 +214,7 @@ pub mod tests {
     use game::{RngDeck, State, Action, Reward};
     use rand::thread_rng;
 
-    use gpi::{Gpi, Alg, EpsilonGreedyPolicy};
+    use gpi::{Gpi, Alg, EpsilonGreedyPolicy, EpsilonType};
 
     pub struct DumbAlg {
         pub action: Action,
@@ -216,10 +238,20 @@ pub mod tests {
             action: Action::Hit,
             reward: 0.0,
         });
+        assert_eq!(policy.epsilon, EpsilonType::Varying);
         let mut gpi = Gpi::new(deck, policy);
 
         gpi.play_episodes(3);
 
         assert_eq!(gpi.episodes, 3);
+    }
+
+    #[test]
+    fn test_constant_epsilon_works() {
+        let policy = EpsilonGreedyPolicy::new(thread_rng(), DumbAlg {
+            action: Action::Hit,
+            reward: 0.0,
+        }).with_constant_epsilon(0.5);
+        assert_eq!(policy.epsilon, EpsilonType::Constant(0.5));
     }
 }
