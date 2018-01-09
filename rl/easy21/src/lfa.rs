@@ -110,13 +110,21 @@ mod tests {
     use game::State;
 
     #[test]
-    fn test_to_feature_vector_works() {
+    fn test_to_feature_vector_works_with_one_cuboid() {
         let fv = to_feature_vector(State { dealer: 1, player: 1 }, Hit);
-        let mut expected = [0.0; NUM_FEATURES];
+        let mut expected = vec![0.0; NUM_FEATURES];
         expected[0] = 1.0;
 
-        for i in 0..NUM_FEATURES {
-            assert_eq!(fv[i], expected[i], "fv[{}] should match", i);
-        }
+        assert_eq!(fv.to_vec(), expected);
+    }
+
+    #[test]
+    fn test_to_feature_vector_works_with_two_cuboids() {
+        let fv = to_feature_vector(State { dealer: 1, player: 5 }, Hit);
+        let mut expected = vec![0.0; NUM_FEATURES];
+        expected[0] = 1.0;
+        expected[2] = 1.0;
+
+        assert_eq!(fv.to_vec(), expected);
     }
 }
