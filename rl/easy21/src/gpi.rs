@@ -101,7 +101,7 @@ impl<T: Rng, U: Alg> EpsilonGreedyPolicy<T, U> {
         }
     }
 
-    fn with_constant_epsilon(mut self, value: f32) -> Self {
+    pub fn with_constant_epsilon(mut self, value: f32) -> Self {
         self.epsilon = EpsilonType::Constant(value);
         self
     }
