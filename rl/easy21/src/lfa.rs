@@ -75,17 +75,11 @@ const NUM_FEATURES: usize = 36;
 type FeatureVector = [f32; NUM_FEATURES];
 
 fn get_ranges_inside(value: i32, ranges: &Ranges) -> Vec<f32> {
-    let mut result = vec![];
-
-    for range in ranges {
-        result.push(if value >= range.start && value < range.end {
-            1.0
-        } else {
-            0.0
-        });
-    }
-
-    result
+    ranges.iter().map(|range| if value >= range.start && value < range.end {
+        1.0
+    } else {
+        0.0
+    }).collect()
 }
 
 fn to_feature_vector(state: State, action: Action) -> FeatureVector {
