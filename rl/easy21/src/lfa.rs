@@ -55,7 +55,8 @@ impl Alg for LinearFunctionApproximator {
 
             let features = to_feature_vector(state, action);
             for i in 0..NUM_FEATURES {
-                self.weights[i] += self.step_size * eligibility_trace * td_error * features[i];
+                self.weights[i] += self.step_size * eligibility_trace *
+                                   td_error * features[i];
             }
 
             *trace = self.lambda * eligibility_trace;
