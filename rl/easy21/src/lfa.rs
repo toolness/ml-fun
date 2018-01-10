@@ -11,6 +11,7 @@ type EligibilityHash = HashMap<(State, Action), f32>;
 
 pub struct LinearFunctionApproximator {
     traces: EligibilityHash,
+    weights: Weights,
     lambda: f32,
     step_size: f32,
 }
@@ -19,6 +20,7 @@ impl LinearFunctionApproximator {
     pub fn new(lambda: f32, step_size: f32) -> Self {
         LinearFunctionApproximator {
             traces: HashMap::new(),
+            weights: [0.0; NUM_FEATURES],
             lambda,
             step_size,
         }
@@ -26,17 +28,15 @@ impl LinearFunctionApproximator {
 }
 
 impl Alg for LinearFunctionApproximator {
-    fn choose_best_action(&self, _state: State) -> Action {
-        // TODO: Implement this.
-        Hit
+    fn choose_best_action(&self, state: State) -> Action {
+        let hit = self.get_expected_reward(state, Hit);
+        let stick = self.get_expected_reward(state, Stick);
+        if hit > stick { Hit } else { Stick }
     }
 
     fn get_expected_reward(&self, state: State, action: Action) -> Reward {
         let features = to_feature_vector(state, action);
-        let weights = [0.0; NUM_FEATURES];
-        let _ = dot_product(features, weights);
-        // TODO: Implement this.
-        0.0
+        dot_product(features, self.weights)
     }
 
     fn on_episode_begin(&mut self) {
