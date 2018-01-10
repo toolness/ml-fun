@@ -32,7 +32,9 @@ impl Alg for LinearFunctionApproximator {
     }
 
     fn get_expected_reward(&self, state: State, action: Action) -> Reward {
-        let _ = to_feature_vector(state, action);
+        let features = to_feature_vector(state, action);
+        let weights = [0.0; NUM_FEATURES];
+        let _ = dot_product(features, weights);
         // TODO: Implement this.
         0.0
     }
@@ -73,6 +75,12 @@ const PLAYER_RANGES: &Ranges = &[1..7, 4..10, 7..13, 10..16, 13..19, 16..22];
 const NUM_FEATURES: usize = 36;
 
 type FeatureVector = [f32; NUM_FEATURES];
+
+type Weights = FeatureVector;
+
+fn dot_product(features: FeatureVector, weights: Weights) -> f32 {
+    (0..NUM_FEATURES).fold(0.0, |sum, i| sum + features[i] * weights[i])
+}
 
 fn get_ranges_inside(value: i32, ranges: &Ranges) -> Vec<f32> {
     ranges.iter().map(|range| if value >= range.start && value < range.end {
@@ -126,5 +134,21 @@ mod tests {
         expected[2] = 1.0;
 
         assert_eq!(fv.to_vec(), expected);
+    }
+
+    #[test]
+    fn test_dot_product_works() {
+        let features = [1.0; NUM_FEATURES];
+        let mut weights = [2.0; NUM_FEATURES];
+
+        assert_eq!(dot_product(features, weights), 2.0 * NUM_FEATURES as f32);
+
+        weights[0] = 1.0;
+
+        assert_eq!(dot_product(features, weights), 2.0 * NUM_FEATURES as f32 - 1.0);
+
+        weights[0] = 0.0;
+
+        assert_eq!(dot_product(features, weights), 2.0 * NUM_FEATURES as f32 - 2.0);
     }
 }
