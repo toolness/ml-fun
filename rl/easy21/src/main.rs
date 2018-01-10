@@ -30,6 +30,20 @@ fn run_sarsa(episodes: i32, lambda: f32) {
     gpi.policy.alg.print_optimal_values();
 }
 
+fn run_lfa(episodes: i32, lambda: f32) {
+    println!(
+        "Performing GPI over {} episodes using LFA with lambda={}...",
+        episodes,
+        lambda
+    );
+
+    let epsilon = 0.05;
+    let step_size = 0.01;
+    let gpi = shortcuts::run_lfa(episodes, lambda, epsilon, step_size);
+
+    gpi.policy.alg.print_optimal_values();
+}
+
 fn validate_episodes(v: String) -> Result<(), String> {
     return if validators::episodes(v.parse::<i32>().unwrap_or(-1)) {
         Ok(())
@@ -63,6 +77,14 @@ fn main() {
         .takes_value(true)
         .validator(validate_episodes);
 
+    let lambda_arg = Arg::with_name("lambda")
+        .short("l")
+        .long("lambda")
+        .help("lambda setting")
+        .default_value("0.5")
+        .takes_value(true)
+        .validator(validate_lambda);
+
     let matches = App::new("easy21")
       .subcommand(SubCommand::with_name("mc")
         .arg(episodes_arg.clone())
@@ -70,19 +92,19 @@ fn main() {
       .subcommand(SubCommand::with_name("sarsa")
         .about("runs sarsa lambda control")
         .arg(episodes_arg.clone())
-        .arg(Arg::with_name("lambda")
-          .short("l")
-          .long("lambda")
-          .help("lambda setting")
-          .default_value("0.5")
-          .takes_value(true)
-          .validator(validate_lambda)))
+        .arg(lambda_arg.clone()))
+      .subcommand(SubCommand::with_name("lfa")
+        .about("runs linear function approximation control")
+        .arg(episodes_arg.clone())
+        .arg(lambda_arg.clone()))
       .get_matches();
 
     if let Some(submatches) = matches.subcommand_matches("mc") {
         run_monte_carlo(get_episodes(&submatches));
     } else if let Some(submatches) = matches.subcommand_matches("sarsa") {
         run_sarsa(get_episodes(&submatches), get_lambda(&submatches));
+    } else if let Some(submatches) = matches.subcommand_matches("lfa") {
+        run_lfa(get_episodes(&submatches), get_lambda(&submatches));
     } else {
         eprintln!("error: Invalid subcommand\n\n{}\n", matches.usage());
         eprintln!("For more information try --help");

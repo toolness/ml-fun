@@ -53,16 +53,13 @@ impl Alg for LinearFunctionApproximator {
         for (&(state, action), trace) in self.traces.iter_mut() {
             let eligibility_trace = *trace;
 
-            // TODO: Implement this, then remove these _'s.
-            let _ = state;
-            let _ = action;
+            let features = to_feature_vector(state, action);
+            for i in 0..NUM_FEATURES {
+                self.weights[i] += self.step_size * eligibility_trace * td_error * features[i];
+            }
 
             *trace = self.lambda * eligibility_trace;
         }
-
-        // TODO: Once implemented, remove these _'s.
-        let _ = td_error;
-        let _ = self.step_size;
     }
 }
 
