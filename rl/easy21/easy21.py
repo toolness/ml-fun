@@ -34,6 +34,10 @@ e21.run_monte_carlo.restype = ct.c_int
 e21.run_sarsa.argtypes = [ct.c_int, ct.c_float, ct.POINTER(OUTPUT_ARRAY)]
 e21.run_sarsa.restype = ct.c_int
 
+e21.run_lfa.argtypes = [ct.c_int, ct.c_float, ct.c_float, ct.c_float,
+                        ct.POINTER(OUTPUT_ARRAY)]
+e21.run_lfa.restype = ct.c_int
+
 
 class Action(IntEnum):
     Hit = 0
@@ -117,7 +121,20 @@ def run_sarsa(episodes: int, lambda_val: float) -> ExpectedRewardMatrix:
     return ExpectedRewardMatrix(output)
 
 
+def run_lfa(episodes: int, lambda_val: float, epsilon: float,
+            step_size: float) -> ExpectedRewardMatrix:
+    output = OUTPUT_ARRAY()
+    result = e21.run_lfa(episodes, lambda_val, epsilon, step_size,
+                         ct.byref(output))
+
+    if result != 0:
+        raise ValueError(f"run_lfa failed with result {result}")
+
+    return ExpectedRewardMatrix(output)
+
+
 def run_smoke_tests():
+    run_lfa(10, 0.5, 0.05, 0.1)
     run_sarsa(1000, 0.5)
     print("Output of monte carlo w/ 30,000 episodes:\n")
     big = run_monte_carlo(30_000)
