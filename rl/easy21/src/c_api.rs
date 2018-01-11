@@ -76,6 +76,37 @@ pub extern "C" fn run_sarsa(
     0
 }
 
+#[no_mangle]
+pub extern "C" fn run_lfa(
+    episodes: c_int,
+    lambda: c_float,
+    epsilon: c_float,
+    step_size: c_float,
+    output: *mut c_float
+) -> i32 {
+    if !validators::episodes(episodes) {
+        return -1;
+    }
+
+    if !validators::lambda(lambda) {
+        return -1;
+    }
+
+    if !validators::epsilon(epsilon) {
+        return -1;
+    }
+
+    if !validators::step_size(step_size) {
+        return -1;
+    }
+
+    let gpi = shortcuts::run_lfa(episodes, lambda, epsilon, step_size);
+
+    write_expected_reward_matrix(&gpi.policy.alg, output);
+
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use gpi::tests::DumbAlg;
