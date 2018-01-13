@@ -44,7 +44,7 @@ impl Alg for SarsaLambda {
 
     fn on_episode_step(&mut self, state: State, action: Action,
                        reward: Reward, next_state: State,
-                       next_action: Action) {
+                       next_action: Action) -> Option<Action> {
         let step_size = self.step_sizer.update(state, action);
         let td_error = reward +
                        self.get_expected_reward(next_state, next_action) -
@@ -56,5 +56,6 @@ impl Alg for SarsaLambda {
                       step_size * td_error * eligibility_trace);
             *trace = self.lambda * eligibility_trace;
         }
+        Some(next_action)
     }
 }

@@ -45,7 +45,7 @@ impl Alg for LinearFunctionApproximator {
 
     fn on_episode_step(&mut self, state: State, action: Action,
                        reward: Reward, next_state: State,
-                       next_action: Action) {
+                       next_action: Action) -> Option<Action> {
         let td_error = reward +
                        self.get_expected_reward(next_state, next_action) -
                        self.get_expected_reward(state, action);
@@ -61,6 +61,7 @@ impl Alg for LinearFunctionApproximator {
 
             *trace = self.lambda * eligibility_trace;
         }
+        Some(next_action)
     }
 }
 

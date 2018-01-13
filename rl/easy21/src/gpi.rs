@@ -26,11 +26,13 @@ pub trait Alg {
     }
 
     // A hook that's called whenever an episode transitions from one state
-    // to another, as the result of an action.
+    // to another, as the result of an action. Can optionally return a
+    // successor action to use next.
     fn on_episode_step(&mut self, state: State, action: Action,
                        reward: Reward, next_state: State,
-                       next_action: Action) {
+                       next_action: Action) -> Option<Action> {
         let _ = (state, action, reward, next_state, next_action);
+        None
     }
 
     // A hook that's called whenever an episode ends. Implementations can
@@ -73,7 +75,7 @@ pub trait Policy {
     fn on_episode_begin(&mut self);
 
     fn on_episode_step(&mut self, state: State, action: Action,
-                       reward: Reward, next_state: State);
+                       reward: Reward, next_state: State) -> Option<Action>;
 
     fn on_episode_end(&mut self);
 }
@@ -139,7 +141,7 @@ impl<T: Rng, U: Alg> Policy for EpsilonGreedyPolicy<T, U> {
     }
 
     fn on_episode_step(&mut self, state: State, action: Action,
-                       reward: Reward, next_state: State) {
+                       reward: Reward, next_state: State) -> Option<Action> {
         if self.epsilon == EpsilonType::Varying {
             increment(&mut self.times_visited, state, 1.0);
         }
@@ -163,7 +165,7 @@ impl<T: Rng, U: Alg> Policy for EpsilonGreedyPolicy<T, U> {
         // just to see what the borrow checker thinks.
         let next_action = self.choose_action(next_state);
         self.alg.on_episode_step(state, action, reward, next_state,
-                                 next_action);
+                                 next_action)
     }
 
     fn on_episode_end(&mut self) {
@@ -191,10 +193,19 @@ impl<T: Deck, U: Policy> Gpi<T, U> {
 
         self.policy.on_episode_begin();
 
+        let mut action = self.policy.choose_action(state);
+
         while !state.is_terminal() {
-            let action = self.policy.choose_action(state);
             let (next_state, reward) = state.step(&mut self.deck, action);
-            self.policy.on_episode_step(state, action, reward, next_state);
+            match self.policy.on_episode_step(state, action, reward,
+                                              next_state) {
+                None => {
+                    action = self.policy.choose_action(next_state);
+                },
+                Some(next_action) => {
+                    action = next_action;
+                }
+            }
             state = next_state;
         }
 

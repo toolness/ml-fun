@@ -43,11 +43,12 @@ impl Alg for MonteCarlo {
 
     fn on_episode_step(&mut self, state: State, action: Action,
                        reward: Reward, _next_state: State,
-                       _next_action: Action) {
+                       _next_action: Action) -> Option<Action> {
         // We only care about the *first* time a state/action pair
         // was visited in an episode.
         self.visited_this_episode.entry((state, action)).or_insert(true);
         self.reward_this_episode += reward;
+        None
     }
 
     fn on_episode_end(&mut self) {
