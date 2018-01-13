@@ -29,13 +29,14 @@ assert e21.get_output_size() == OUTPUT_SIZE
 
 OUTPUT_ARRAY = ct.c_float * OUTPUT_SIZE
 
-GpiCb = Callable[[], None]
+GpiCb = Callable[['ExpectedRewardMatrix'], None]
 
 class CGpiCb:
     CALLBACK = ct.CFUNCTYPE(None)
 
     @classmethod
-    def from_param(cls, obj: Optional[GpiCb]) -> Optional[CALLBACK]:
+    def from_param(cls, obj: Optional[Callable[[], None]]) \
+            -> Optional[CALLBACK]:
         if obj is None:
             return None
         return cls.CALLBACK(obj)
@@ -115,37 +116,59 @@ def output_array_to_numpy(ct_arr: OUTPUT_ARRAY):
     return np_arr
 
 
+class OutputReceiver:
+    def __init__(self, cb: GpiCb=None):
+        self.array = OUTPUT_ARRAY()
+        self.array_ref = ct.byref(self.array)
+        self._cb = cb
+        if self._cb is None:
+            self.cb = None
+        self.errors = 0
+
+    @property
+    def matrix(self) -> ExpectedRewardMatrix:
+        return ExpectedRewardMatrix(self.array)
+
+    def cb(self):
+        if self.errors:
+            return
+        try:
+            self._cb(self.matrix)
+        except Exception as e:
+            self.errors += 1
+            raise e
+
 def run_monte_carlo(episodes: int, cb: GpiCb=None) -> ExpectedRewardMatrix:
-    output = OUTPUT_ARRAY()
-    result = e21.run_monte_carlo(episodes, ct.byref(output), cb)
+    out = OutputReceiver(cb)
+    result = e21.run_monte_carlo(episodes, out.array_ref, out.cb)
 
     if result != 0:
         raise ValueError(f"run_monte_carlo failed with result {result}")
 
-    return ExpectedRewardMatrix(output)
+    return out.matrix
 
 
 def run_sarsa(episodes: int, lambda_val: float,
               cb: GpiCb=None) -> ExpectedRewardMatrix:
-    output = OUTPUT_ARRAY()
-    result = e21.run_sarsa(episodes, lambda_val, ct.byref(output), cb)
+    out = OutputReceiver(cb)
+    result = e21.run_sarsa(episodes, lambda_val, out.array_ref, out.cb)
 
     if result != 0:
         raise ValueError(f"run_sarsa failed with result {result}")
 
-    return ExpectedRewardMatrix(output)
+    return out.matrix
 
 
 def run_lfa(episodes: int, lambda_val: float, epsilon: float,
             step_size: float, cb: GpiCb=None) -> ExpectedRewardMatrix:
-    output = OUTPUT_ARRAY()
+    out = OutputReceiver(cb)
     result = e21.run_lfa(episodes, lambda_val, epsilon, step_size,
-                         ct.byref(output), cb)
+                         out.array_ref, out.cb)
 
     if result != 0:
         raise ValueError(f"run_lfa failed with result {result}")
 
-    return ExpectedRewardMatrix(output)
+    return out.matrix
 
 
 def run_smoke_tests():
@@ -160,12 +183,23 @@ def run_smoke_tests():
     assert big.get_max_diff(small) > 0
     assert big.get_mean_squared_err(small) > 0
 
-    times_called = 0
-    def callback():
+    def callback(obj):
         nonlocal times_called
+        assert isinstance(obj, ExpectedRewardMatrix)
         times_called += 1
+
+    times_called = 0
     run_monte_carlo(3, callback)
     assert times_called == 3
+
+    times_called = 0
+    run_sarsa(7, 0.5, callback)
+    assert times_called == 7
+
+    times_called = 0
+    run_lfa(5, 0.5, 0.05, 0.1, callback)
+    assert times_called == 5
+
 
 if __name__ == '__main__':
     run_smoke_tests()
