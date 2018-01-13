@@ -14,7 +14,9 @@ pub fn run_monte_carlo(episodes: i32) -> Gpi<RngDeck<StdRng>, EpsilonGreedyPolic
     let policy = EpsilonGreedyPolicy::new(rng, mc_alg);
     let mut gpi = Gpi::new(deck, policy);
 
-    gpi.play_episodes(episodes);
+    if episodes > 0 {
+        gpi.play_episodes(episodes);
+    }
 
     gpi
 }
@@ -27,7 +29,9 @@ pub fn run_sarsa(episodes: i32, lambda: f32) -> Gpi<RngDeck<StdRng>, EpsilonGree
     let policy = EpsilonGreedyPolicy::new(rng, sarsa_alg);
     let mut gpi = Gpi::new(deck, policy);
 
-    gpi.play_episodes(episodes);
+    if episodes > 0 {
+        gpi.play_episodes(episodes);
+    }
 
     gpi
 }
@@ -40,7 +44,9 @@ pub fn run_lfa(episodes: i32, lambda: f32, epsilon: f32, step_size: f32) -> Gpi<
     let policy = EpsilonGreedyPolicy::new(rng, lfa_alg).with_constant_epsilon(epsilon);
     let mut gpi = Gpi::new(deck, policy);
 
-    gpi.play_episodes(episodes);
+    if episodes > 0 {
+        gpi.play_episodes(episodes);
+    }
 
     gpi
 }
