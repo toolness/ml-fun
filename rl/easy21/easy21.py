@@ -138,6 +138,7 @@ class OutputReceiver:
             self.errors += 1
             raise e
 
+
 def run_monte_carlo(episodes: int, cb: GpiCb=None) -> ExpectedRewardMatrix:
     out = OutputReceiver(cb)
     result = e21.run_monte_carlo(episodes, out.array_ref, out.cb)
