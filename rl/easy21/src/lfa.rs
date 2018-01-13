@@ -72,11 +72,22 @@ impl Alg for LinearFunctionApproximator {
 
 type Ranges = [Range<i32>];
 
-const DEALER_RANGES: &Ranges = &[1..5, 4..8, 7..11];
+const NUM_DEALER_RANGES: usize = 3;
 
-const PLAYER_RANGES: &Ranges = &[1..7, 4..10, 7..13, 10..16, 13..19, 16..22];
+const DEALER_RANGES: &[Range<i32>; NUM_DEALER_RANGES] = &[
+    1..5, 4..8, 7..11
+];
 
-const NUM_FEATURES: usize = 36;
+const NUM_PLAYER_RANGES: usize = 6;
+
+const PLAYER_RANGES: &[Range<i32>; NUM_PLAYER_RANGES] = &[
+    1..7, 4..10, 7..13, 10..16, 13..19, 16..22
+];
+
+const NUM_ACTIONS: usize = 2;
+
+const NUM_FEATURES: usize = NUM_DEALER_RANGES * NUM_PLAYER_RANGES *
+                            NUM_ACTIONS;
 
 type FeatureVector = [f32; NUM_FEATURES];
 
@@ -86,23 +97,28 @@ fn dot_product(features: FeatureVector, weights: Weights) -> f32 {
     (0..NUM_FEATURES).fold(0.0, |sum, i| sum + features[i] * weights[i])
 }
 
-fn get_ranges_inside(value: i32, ranges: &Ranges) -> Vec<f32> {
-    ranges.iter().map(|range| if value >= range.start && value < range.end {
-        1.0
-    } else {
-        0.0
-    }).collect()
+fn get_ranges_inside(value: i32, ranges: &Ranges, target: &mut [f32]) {
+    for i in 0..ranges.len() {
+        target[i] = if value >= ranges[i].start && value < ranges[i].end {
+            1.0
+        } else {
+            0.0
+        };
+    }
 }
 
 fn to_feature_vector(state: State, action: Action) -> FeatureVector {
     let mut vector = [0.0; NUM_FEATURES];
     let mut i = 0;
-    let dealer_indexes = get_ranges_inside(state.dealer, DEALER_RANGES);
-    let player_indexes = get_ranges_inside(state.player, PLAYER_RANGES);
-    let action_indexes = match action {
-        Hit => vec![1.0, 0.0],
-        Stick => vec![0.0, 1.0]
+    let mut dealer_indexes = [0.0; NUM_DEALER_RANGES];
+    let mut player_indexes = [0.0; NUM_PLAYER_RANGES];
+    let action_indexes: &[f32; NUM_ACTIONS] = match action {
+        Hit => &[1.0, 0.0],
+        Stick => &[0.0, 1.0]
     };
+
+    get_ranges_inside(state.player, PLAYER_RANGES, &mut player_indexes);
+    get_ranges_inside(state.dealer, DEALER_RANGES, &mut dealer_indexes);
 
     for dealer in dealer_indexes.iter() {
         for player in player_indexes.iter() {
