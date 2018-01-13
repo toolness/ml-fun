@@ -6,7 +6,9 @@ use sarsa::SarsaLambda;
 use lfa::LinearFunctionApproximator;
 use game::RngDeck;
 
-pub fn run_monte_carlo(episodes: i32) -> Gpi<RngDeck<StdRng>, EpsilonGreedyPolicy<StdRng, MonteCarlo>> {
+pub type MonteCarloGpi = Gpi<RngDeck<StdRng>, EpsilonGreedyPolicy<StdRng, MonteCarlo>>;
+
+pub fn run_monte_carlo(episodes: i32) -> MonteCarloGpi {
     let seed: &[_] = &[1, 2, 3, 4];
     let rng: StdRng = SeedableRng::from_seed(seed);
     let deck = RngDeck::new(rng);
@@ -14,7 +16,9 @@ pub fn run_monte_carlo(episodes: i32) -> Gpi<RngDeck<StdRng>, EpsilonGreedyPolic
     let policy = EpsilonGreedyPolicy::new(rng, mc_alg);
     let mut gpi = Gpi::new(deck, policy);
 
-    gpi.play_episodes(episodes);
+    if episodes > 0 {
+        gpi.play_episodes(episodes);
+    }
 
     gpi
 }
