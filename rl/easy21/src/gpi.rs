@@ -155,6 +155,11 @@ impl<T: Rng, U: Alg> Policy for EpsilonGreedyPolicy<T, U> {
         // `FnMut(State) -> Action`, but that raised errors with the
         // borrow checker when I tried passing `self.choose_action`.
         //
+        // Then I tried using RefCells to make this class' mutability
+        // more granular, but that didn't work either:
+        //
+        //     https://github.com/toolness/ml-fun/pull/2
+        //
         // The only remaining option is to *always* calculate the next action,
         // and pass it to the algorithm, which can use it if needed.
         //
