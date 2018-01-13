@@ -15,7 +15,7 @@ fn run_monte_carlo(episodes: i32) {
 
     let gpi = shortcuts::run_monte_carlo(episodes);
 
-    gpi.policy.alg.print_optimal_values();
+    gpi.policy.alg.borrow().print_optimal_values();
 }
 
 fn run_sarsa(episodes: i32, lambda: f32) {
@@ -27,7 +27,7 @@ fn run_sarsa(episodes: i32, lambda: f32) {
 
     let gpi = shortcuts::run_sarsa(episodes, lambda);
 
-    gpi.policy.alg.print_optimal_values();
+    gpi.policy.alg.borrow().print_optimal_values();
 }
 
 fn run_lfa(episodes: i32, lambda: f32) {
@@ -41,7 +41,7 @@ fn run_lfa(episodes: i32, lambda: f32) {
     let step_size = 0.01;
     let gpi = shortcuts::run_lfa(episodes, lambda, epsilon, step_size);
 
-    gpi.policy.alg.print_optimal_values();
+    gpi.policy.alg.borrow().print_optimal_values();
 }
 
 fn validate_episodes(v: String) -> Result<(), String> {

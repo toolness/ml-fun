@@ -28,10 +28,11 @@ pub trait Alg {
     // A hook that's called whenever an episode transitions from one state
     // to another, as the result of an action. Can optionally return a
     // successor action to use next.
-    fn on_episode_step(&mut self, state: State, action: Action,
-                       reward: Reward, next_state: State,
-                       next_action: Action) -> Option<Action> {
-        let _ = (state, action, reward, next_state, next_action);
+    fn on_episode_step<F>(&mut self, state: State, action: Action,
+                          reward: Reward, next_state: State,
+                          get_next_action: F) -> Option<Action>
+        where F: Fn() -> Action {
+        let _ = (state, action, reward, next_state, get_next_action);
         None
     }
 
@@ -86,10 +87,12 @@ enum EpsilonType {
     Constant(f32),
 }
 
+use std::cell::{RefCell};
+
 pub struct EpsilonGreedyPolicy<T: Rng, U: Alg> {
     times_visited: HashMap<State, f32>,
-    rng: T,
-    pub alg: U,
+    rng: RefCell<T>,
+    pub alg: RefCell<U>,
     epsilon: EpsilonType,
 }
 
@@ -97,8 +100,8 @@ impl<T: Rng, U: Alg> EpsilonGreedyPolicy<T, U> {
     pub fn new(rng: T, alg: U) -> Self {
         EpsilonGreedyPolicy {
             times_visited: HashMap::new(),
-            rng,
-            alg,
+            rng: RefCell::new(rng),
+            alg: RefCell::new(alg),
             epsilon: EpsilonType::Varying,
         }
     }
@@ -108,11 +111,11 @@ impl<T: Rng, U: Alg> EpsilonGreedyPolicy<T, U> {
         self
     }
 
-    fn exploratory_action(&mut self) -> Action {
-        if self.rng.gen_weighted_bool(2) { Hit } else { Stick }
+    fn exploratory_action(&self) -> Action {
+        if self.rng.borrow_mut().gen_weighted_bool(2) { Hit } else { Stick }
     }
 
-    fn should_explore(&mut self, state: State) -> bool {
+    fn should_explore(&self, state: State) -> bool {
         let epsilon = match self.epsilon {
             EpsilonType::Varying => {
                 let n_0 = 100.0;
@@ -123,21 +126,25 @@ impl<T: Rng, U: Alg> EpsilonGreedyPolicy<T, U> {
                 value
             }
         };
-        self.rng.next_f32() < epsilon
+        self.rng.borrow_mut().next_f32() < epsilon
+    }
+
+    fn interior_choose_action(&self, state: State) -> Action {
+        if self.should_explore(state) {
+            self.exploratory_action()
+        } else {
+            self.alg.borrow().choose_best_action(state)
+        }
     }
 }
 
 impl<T: Rng, U: Alg> Policy for EpsilonGreedyPolicy<T, U> {
     fn choose_action(&mut self, state: State) -> Action {
-        if self.should_explore(state) {
-            self.exploratory_action()
-        } else {
-            self.alg.choose_best_action(state)
-        }
+        self.interior_choose_action(state)
     }
 
     fn on_episode_begin(&mut self) {
-        self.alg.on_episode_begin();
+        self.alg.get_mut().on_episode_begin();
     }
 
     fn on_episode_step(&mut self, state: State, action: Action,
@@ -163,13 +170,15 @@ impl<T: Rng, U: Alg> Policy for EpsilonGreedyPolicy<T, U> {
         // have multiple trait implementations in place, since we have to
         // change the trait definition *and* every implementation site
         // just to see what the borrow checker thinks.
-        let next_action = self.choose_action(next_state);
-        self.alg.on_episode_step(state, action, reward, next_state,
-                                 next_action)
+        let get_next_action = || -> Action {
+            self.interior_choose_action(next_state)
+        };
+        self.alg.borrow_mut().on_episode_step(state, action, reward, next_state,
+                                              get_next_action)
     }
 
     fn on_episode_end(&mut self) {
-        self.alg.on_episode_end();
+        self.alg.get_mut().on_episode_end();
     }
 }
 

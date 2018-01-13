@@ -43,9 +43,11 @@ impl Alg for LinearFunctionApproximator {
         self.traces.drain();
     }
 
-    fn on_episode_step(&mut self, state: State, action: Action,
-                       reward: Reward, next_state: State,
-                       next_action: Action) -> Option<Action> {
+    fn on_episode_step<F>(&mut self, state: State, action: Action,
+                          reward: Reward, next_state: State,
+                          get_next_action: F) -> Option<Action>
+        where F: Fn() -> Action {
+        let next_action = get_next_action();
         let td_error = reward +
                        self.get_expected_reward(next_state, next_action) -
                        self.get_expected_reward(state, action);
