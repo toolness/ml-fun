@@ -1,4 +1,4 @@
-use libc::{c_int, c_float};
+use libc::{c_int, c_float, c_void};
 
 use game::{State, Action, MIN_SUM, MAX_SUM, MIN_CARD, MAX_CARD};
 use gpi::Alg;
@@ -37,6 +37,31 @@ fn write_expected_reward_matrix(alg: &Alg, output: *mut c_float) {
             i += 2;
         }
     }
+}
+
+#[no_mangle]
+pub extern "C" fn monte_carlo_new() -> *mut c_void {
+    let gpi = Box::new(shortcuts::run_monte_carlo(0));
+
+    Box::into_raw(gpi) as *mut c_void
+}
+
+#[no_mangle]
+pub extern "C" fn monte_carlo_play_episodes(episodes: c_int, ptr: *mut c_void) {
+    let mut gpi = unsafe {
+        Box::from_raw(ptr as *mut shortcuts::MonteCarloGpi)
+    };
+
+    gpi.play_episodes(episodes);
+
+    Box::into_raw(gpi) as *mut c_void;
+}
+
+#[no_mangle]
+pub extern "C" fn monte_carlo_drop(ptr: *mut c_void) {
+    unsafe {
+        Box::from_raw(ptr as *mut shortcuts::MonteCarloGpi)
+    };
 }
 
 #[no_mangle]
@@ -133,5 +158,13 @@ mod tests {
     #[test]
     fn test_run_monte_carlo_returns_err_if_invalid_episodes() {
         assert_eq!(run_monte_carlo(-1, [0.0; OUTPUT_SIZE].as_mut_ptr()), -1);
+    }
+
+    #[test]
+    fn test_boxed_monte_carlo() {
+        let mc = monte_carlo_new();
+        monte_carlo_play_episodes(10, mc);
+        monte_carlo_play_episodes(10, mc);
+        monte_carlo_drop(mc);
     }
 }
