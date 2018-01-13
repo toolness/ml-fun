@@ -1,6 +1,7 @@
 import ctypes as ct
 from pathlib import Path
 from enum import IntEnum
+from typing import Callable, Optional
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,14 +29,27 @@ assert e21.get_output_size() == OUTPUT_SIZE
 
 OUTPUT_ARRAY = ct.c_float * OUTPUT_SIZE
 
-e21.run_monte_carlo.argtypes = [ct.c_int, ct.POINTER(OUTPUT_ARRAY)]
+GpiCb = Callable[[], None]
+
+class CGpiCb:
+    CALLBACK = ct.CFUNCTYPE(None)
+
+    @classmethod
+    def from_param(cls, obj: Optional[GpiCb]) -> Optional[CALLBACK]:
+        if obj is None:
+            return None
+        return cls.CALLBACK(obj)
+
+e21.run_monte_carlo.argtypes = [ct.c_int, ct.POINTER(OUTPUT_ARRAY),
+                                CGpiCb]
 e21.run_monte_carlo.restype = ct.c_int
 
-e21.run_sarsa.argtypes = [ct.c_int, ct.c_float, ct.POINTER(OUTPUT_ARRAY)]
+e21.run_sarsa.argtypes = [ct.c_int, ct.c_float, ct.POINTER(OUTPUT_ARRAY),
+                          CGpiCb]
 e21.run_sarsa.restype = ct.c_int
 
 e21.run_lfa.argtypes = [ct.c_int, ct.c_float, ct.c_float, ct.c_float,
-                        ct.POINTER(OUTPUT_ARRAY)]
+                        ct.POINTER(OUTPUT_ARRAY), CGpiCb]
 e21.run_lfa.restype = ct.c_int
 
 
@@ -101,9 +115,9 @@ def output_array_to_numpy(ct_arr: OUTPUT_ARRAY):
     return np_arr
 
 
-def run_monte_carlo(episodes: int) -> ExpectedRewardMatrix:
+def run_monte_carlo(episodes: int, cb: GpiCb=None) -> ExpectedRewardMatrix:
     output = OUTPUT_ARRAY()
-    result = e21.run_monte_carlo(episodes, ct.byref(output))
+    result = e21.run_monte_carlo(episodes, ct.byref(output), cb)
 
     if result != 0:
         raise ValueError(f"run_monte_carlo failed with result {result}")
@@ -111,9 +125,10 @@ def run_monte_carlo(episodes: int) -> ExpectedRewardMatrix:
     return ExpectedRewardMatrix(output)
 
 
-def run_sarsa(episodes: int, lambda_val: float) -> ExpectedRewardMatrix:
+def run_sarsa(episodes: int, lambda_val: float,
+              cb: GpiCb=None) -> ExpectedRewardMatrix:
     output = OUTPUT_ARRAY()
-    result = e21.run_sarsa(episodes, lambda_val, ct.byref(output))
+    result = e21.run_sarsa(episodes, lambda_val, ct.byref(output), cb)
 
     if result != 0:
         raise ValueError(f"run_sarsa failed with result {result}")
@@ -122,10 +137,10 @@ def run_sarsa(episodes: int, lambda_val: float) -> ExpectedRewardMatrix:
 
 
 def run_lfa(episodes: int, lambda_val: float, epsilon: float,
-            step_size: float) -> ExpectedRewardMatrix:
+            step_size: float, cb: GpiCb=None) -> ExpectedRewardMatrix:
     output = OUTPUT_ARRAY()
     result = e21.run_lfa(episodes, lambda_val, epsilon, step_size,
-                         ct.byref(output))
+                         ct.byref(output), cb)
 
     if result != 0:
         raise ValueError(f"run_lfa failed with result {result}")
@@ -144,6 +159,13 @@ def run_smoke_tests():
     small = run_monte_carlo(30)
     assert big.get_max_diff(small) > 0
     assert big.get_mean_squared_err(small) > 0
+
+    times_called = 0
+    def callback():
+        nonlocal times_called
+        times_called += 1
+    run_monte_carlo(3, callback)
+    assert times_called == 3
 
 if __name__ == '__main__':
     run_smoke_tests()

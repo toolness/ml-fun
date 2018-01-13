@@ -1,7 +1,8 @@
 use libc::{c_int, c_float};
+use rand::Rng;
 
-use game::{State, Action, MIN_SUM, MAX_SUM, MIN_CARD, MAX_CARD};
-use gpi::Alg;
+use game::{State, Action, Deck, MIN_SUM, MAX_SUM, MIN_CARD, MAX_CARD};
+use gpi::{Alg, Gpi, EpsilonGreedyPolicy};
 use shortcuts;
 use validators;
 
@@ -39,18 +40,39 @@ fn write_expected_reward_matrix(alg: &Alg, output: *mut c_float) {
     }
 }
 
+fn run_gpi<T: Deck, U: Rng, V: Alg>(
+    gpi: &mut Gpi<T, EpsilonGreedyPolicy<U, V>>,
+    episodes: c_int,
+    output: *mut c_float,
+    cb: Option<extern "C" fn()>
+) {
+    match cb {
+        None => {
+            gpi.play_episodes(episodes);
+            write_expected_reward_matrix(&gpi.policy.alg, output);
+        },
+        Some(func) => {
+            for _ in 0..episodes {
+                gpi.play_episode();
+                func();
+            }
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn run_monte_carlo(
     episodes: c_int,
-    output: *mut c_float
+    output: *mut c_float,
+    cb: Option<extern "C" fn()>
 ) -> i32 {
     if !validators::episodes(episodes) {
         return -1;
     }
 
-    let gpi = shortcuts::run_monte_carlo(episodes);
+    let mut gpi = shortcuts::run_monte_carlo(0);
 
-    write_expected_reward_matrix(&gpi.policy.alg, output);
+    run_gpi(&mut gpi, episodes, output, cb);
 
     0
 }
@@ -59,7 +81,8 @@ pub extern "C" fn run_monte_carlo(
 pub extern "C" fn run_sarsa(
     episodes: c_int,
     lambda: c_float,
-    output: *mut c_float
+    output: *mut c_float,
+    cb: Option<extern "C" fn()>,
 ) -> i32 {
     if !validators::episodes(episodes) {
         return -1;
@@ -69,9 +92,9 @@ pub extern "C" fn run_sarsa(
         return -1;
     }
 
-    let gpi = shortcuts::run_sarsa(episodes, lambda);
+    let mut gpi = shortcuts::run_sarsa(0, lambda);
 
-    write_expected_reward_matrix(&gpi.policy.alg, output);
+    run_gpi(&mut gpi, episodes, output, cb);
 
     0
 }
@@ -82,7 +105,8 @@ pub extern "C" fn run_lfa(
     lambda: c_float,
     epsilon: c_float,
     step_size: c_float,
-    output: *mut c_float
+    output: *mut c_float,
+    cb: Option<extern "C" fn()>,
 ) -> i32 {
     if !validators::episodes(episodes) {
         return -1;
@@ -100,9 +124,9 @@ pub extern "C" fn run_lfa(
         return -1;
     }
 
-    let gpi = shortcuts::run_lfa(episodes, lambda, epsilon, step_size);
+    let mut gpi = shortcuts::run_lfa(episodes, lambda, epsilon, step_size);
 
-    write_expected_reward_matrix(&gpi.policy.alg, output);
+    run_gpi(&mut gpi, episodes, output, cb);
 
     0
 }
@@ -127,11 +151,11 @@ mod tests {
 
     #[test]
     fn test_run_monte_carlo_works() {
-        assert_eq!(run_monte_carlo(5, [0.0; OUTPUT_SIZE].as_mut_ptr()), 0);
+        assert_eq!(run_monte_carlo(5, [0.0; OUTPUT_SIZE].as_mut_ptr(), None), 0);
     }
 
     #[test]
     fn test_run_monte_carlo_returns_err_if_invalid_episodes() {
-        assert_eq!(run_monte_carlo(-1, [0.0; OUTPUT_SIZE].as_mut_ptr()), -1);
+        assert_eq!(run_monte_carlo(-1, [0.0; OUTPUT_SIZE].as_mut_ptr(), None), -1);
     }
 }
