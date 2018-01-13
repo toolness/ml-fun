@@ -25,12 +25,21 @@ pub trait Alg {
     fn on_episode_begin(&mut self) {
     }
 
+    // Whether or not the algorithm needs a valid 'next_action' passed to
+    // on_episode_step().
+    fn needs_next_action(&self) -> bool {
+        false
+    }
+
     // A hook that's called whenever an episode transitions from one state
     // to another, as the result of an action. Can optionally return a
     // successor action to use next.
+    //
+    // Note that next_action will only be valid if needs_next_action()
+    // returns true.
     fn on_episode_step(&mut self, state: State, action: Action,
                        reward: Reward, next_state: State,
-                       next_action: Action) -> Option<Action> {
+                       next_action: Option<Action>) -> Option<Action> {
         let _ = (state, action, reward, next_state, next_action);
         None
     }
@@ -160,15 +169,20 @@ impl<T: Rng, U: Alg> Policy for EpsilonGreedyPolicy<T, U> {
         //
         //     https://github.com/toolness/ml-fun/pull/2
         //
-        // The only remaining option is to *always* calculate the next action,
-        // and pass it to the algorithm, which can use it if needed.
+        // The only remaining option is to create Alg::needs_next_action(),
+        // and pass the next action to the algorithm only if that returns
+        // true.
         //
         // It should also be noted that tinkering with the calling
         // convention of `Alg.on_episode_step()` is difficult once we
         // have multiple trait implementations in place, since we have to
         // change the trait definition *and* every implementation site
         // just to see what the borrow checker thinks.
-        let next_action = self.choose_action(next_state);
+        let next_action = if self.alg.needs_next_action() {
+            Some(self.choose_action(next_state))
+        } else {
+            None
+        };
         self.alg.on_episode_step(state, action, reward, next_state,
                                  next_action)
     }

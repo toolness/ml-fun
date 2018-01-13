@@ -21,7 +21,7 @@ pub extern "C" fn get_output_size() -> c_int {
     OUTPUT_SIZE as i32
 }
 
-fn write_expected_reward_matrix(alg: &Alg, output: *mut c_float) {
+fn write_expected_reward_matrix<T: Alg>(alg: &T, output: *mut c_float) {
     let mut i = 0;
 
     for dealer in MIN_CARD..MAX_CARD + 1 {
