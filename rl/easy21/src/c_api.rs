@@ -54,6 +54,7 @@ fn run_gpi<T: Deck, U: Rng, V: Alg>(
         Some(func) => {
             for _ in 0..episodes {
                 gpi.play_episode();
+                write_expected_reward_matrix(&gpi.policy.alg, output);
                 func();
             }
         }
