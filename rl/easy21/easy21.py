@@ -1,7 +1,7 @@
 import ctypes as ct
 from pathlib import Path
 from enum import IntEnum
-from typing import Callable, Optional
+from typing import Callable, Optional, Dict, Union
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,6 +20,11 @@ MAX_SUM = 21
 DEALER_RANGE = range(MIN_CARD, MAX_CARD + 1)
 PLAYER_RANGE = range(MIN_SUM, MAX_SUM + 1)
 OUTPUT_SIZE = len(DEALER_RANGE) * len(PLAYER_RANGE) * NUM_ACTIONS
+
+FANCY_PARAM_NAMES = {
+    'lambda_val': 'λ',
+    'epsilon': 'ε',
+}
 
 e21 = ct.CDLL(str(CDLL_FILE))
 
@@ -143,6 +148,15 @@ class OutputReceiver:
             raise e
 
 
+def describe_params(params: Dict[str, Union[int, float]]) -> str:
+    parts = []
+    for name, value in params.items():
+        fancy_name = FANCY_PARAM_NAMES.get(name, name)
+        parts.append(f'{fancy_name}={value}')
+    parts.sort()
+    return ', '.join(parts)
+
+
 def alg_name(name: str) -> Callable:
     def decorator(fn: Callable) -> Callable:
         fn.alg_name = name
@@ -198,38 +212,8 @@ def run_lfa(episodes: int, lambda_val: float, epsilon: float,
     return out.matrix
 
 
-def run_smoke_tests():
-    run_lfa(10, 0.5, 0.05, 0.1)
-    run_sarsa(1000, 0.5)
-    run_q_learning(1000, 0.5)
-    print("Output of monte carlo w/ 30,000 episodes:\n")
-    big = run_monte_carlo(30_000)
-    print(big)
-    print("\nCompare this w/ the output of 'cargo run -- mc -e 30000'.")
-
-    small = run_monte_carlo(30)
-    assert big.get_max_diff(small) > 0
-    assert big.get_mean_squared_err(small) > 0
-
-    def callback(obj):
-        nonlocal times_called
-        assert isinstance(obj, ExpectedRewardMatrix)
-        times_called += 1
-
-    times_called = 0
-    run_monte_carlo(3, callback)
-    assert times_called == 3
-
-    times_called = 0
-    run_sarsa(7, 0.5, callback)
-    assert times_called == 7
-
-    times_called = 0
-    run_lfa(5, 0.5, 0.05, 0.1, callback)
-    assert times_called == 5
-
-    assert run_monte_carlo.alg_name == "Monte Carlo"
-
-
 if __name__ == '__main__':
-    run_smoke_tests()
+    print("Output of monte carlo w/ 30,000 episodes:\n")
+    print(run_monte_carlo(30_000))
+    print("\nCompare this w/ the output of 'cargo run -- mc -e 30000'.")
+    print("\nAlso run 'pytest' to run the unit tests.")
