@@ -24,6 +24,7 @@ OUTPUT_SIZE = len(DEALER_RANGE) * len(PLAYER_RANGE) * NUM_ACTIONS
 FANCY_PARAM_NAMES = {
     'lambda_val': 'λ',
     'epsilon': 'ε',
+    'step_size': 'α',
 }
 
 e21 = ct.CDLL(str(CDLL_FILE))
