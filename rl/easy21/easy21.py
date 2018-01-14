@@ -143,6 +143,14 @@ class OutputReceiver:
             raise e
 
 
+def alg_name(name: str) -> Callable:
+    def decorator(fn: Callable) -> Callable:
+        fn.alg_name = name
+        return fn
+    return decorator
+
+
+@alg_name("Monte Carlo")
 def run_monte_carlo(episodes: int, cb: GpiCb=None) -> ExpectedRewardMatrix:
     out = OutputReceiver(cb)
     result = e21.run_monte_carlo(episodes, out.array_ref, out.cb)
@@ -153,6 +161,7 @@ def run_monte_carlo(episodes: int, cb: GpiCb=None) -> ExpectedRewardMatrix:
     return out.matrix
 
 
+@alg_name("Sarsa(λ)")
 def run_sarsa(episodes: int, lambda_val: float,
               cb: GpiCb=None) -> ExpectedRewardMatrix:
     out = OutputReceiver(cb)
@@ -164,6 +173,7 @@ def run_sarsa(episodes: int, lambda_val: float,
     return out.matrix
 
 
+@alg_name("Q-Learning")
 def run_q_learning(episodes: int, lambda_val: float,
                    cb: GpiCb=None) -> ExpectedRewardMatrix:
     out = OutputReceiver(cb)
@@ -175,6 +185,7 @@ def run_q_learning(episodes: int, lambda_val: float,
     return out.matrix
 
 
+@alg_name("Linear Function Approximation")
 def run_lfa(episodes: int, lambda_val: float, epsilon: float,
             step_size: float, cb: GpiCb=None) -> ExpectedRewardMatrix:
     out = OutputReceiver(cb)
@@ -216,6 +227,8 @@ def run_smoke_tests():
     times_called = 0
     run_lfa(5, 0.5, 0.05, 0.1, callback)
     assert times_called == 5
+
+    assert run_monte_carlo.alg_name == "Monte Carlo"
 
 
 if __name__ == '__main__':
