@@ -7,6 +7,7 @@ pub const MIN_CARD: i32 = 1;
 pub const MAX_CARD: i32 = 10;
 pub const MIN_SUM: i32 = 1;
 pub const MAX_SUM: i32 = 21;
+pub const NUM_ACTIONS: usize = 2;
 const DEALER_STICK_MIN: i32 = 17;
 
 pub type Reward = f32;

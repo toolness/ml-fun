@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::ops::Range;
 
-use game::{State, Action, Reward};
+use game::{State, Action, Reward, NUM_ACTIONS};
 use game::Action::*;
 use gpi::Alg;
 use util::{increment};
@@ -83,8 +83,6 @@ const NUM_PLAYER_RANGES: usize = 6;
 const PLAYER_RANGES: &[Range<i32>; NUM_PLAYER_RANGES] = &[
     1..7, 4..10, 7..13, 10..16, 13..19, 16..22
 ];
-
-const NUM_ACTIONS: usize = 2;
 
 const NUM_FEATURES: usize = NUM_DEALER_RANGES * NUM_PLAYER_RANGES *
                             NUM_ACTIONS;

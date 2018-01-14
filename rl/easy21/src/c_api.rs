@@ -1,13 +1,12 @@
 use libc::{c_int, c_float};
 use rand::Rng;
 
-use game::{State, Action, Deck, MIN_SUM, MAX_SUM, MIN_CARD, MAX_CARD};
+use game::{State, Action, Deck, MIN_SUM, MAX_SUM, MIN_CARD, MAX_CARD,
+           NUM_ACTIONS};
 use gpi::{Alg, Gpi, EpsilonGreedyPolicy};
 use shortcuts;
 use validators;
 
-
-const NUM_ACTIONS: usize = 2;
 
 const DEALER_SIZE: usize = (MAX_CARD + 1 - MIN_CARD) as usize;
 
