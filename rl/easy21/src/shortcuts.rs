@@ -3,6 +3,7 @@ use rand::{SeedableRng, StdRng};
 use gpi::{Gpi, EpsilonGreedyPolicy};
 use montecarlo::MonteCarlo;
 use sarsa::SarsaLambda;
+use qlearning::QLearning;
 use lfa::LinearFunctionApproximator;
 use game::RngDeck;
 
@@ -27,6 +28,21 @@ pub fn run_sarsa(episodes: i32, lambda: f32) -> Gpi<RngDeck<StdRng>, EpsilonGree
     let deck = RngDeck::new(rng);
     let sarsa_alg = SarsaLambda::new(lambda);
     let policy = EpsilonGreedyPolicy::new(rng, sarsa_alg);
+    let mut gpi = Gpi::new(deck, policy);
+
+    if episodes > 0 {
+        gpi.play_episodes(episodes);
+    }
+
+    gpi
+}
+
+pub fn run_q_learning(episodes: i32, lambda: f32) -> Gpi<RngDeck<StdRng>, EpsilonGreedyPolicy<StdRng, QLearning>> {
+    let seed: &[_] = &[1, 2, 3, 4];
+    let rng: StdRng = SeedableRng::from_seed(seed);
+    let deck = RngDeck::new(rng);
+    let qlearning_alg = QLearning::new(lambda);
+    let policy = EpsilonGreedyPolicy::new(rng, qlearning_alg);
     let mut gpi = Gpi::new(deck, policy);
 
     if episodes > 0 {

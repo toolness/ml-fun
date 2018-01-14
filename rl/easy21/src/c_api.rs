@@ -100,6 +100,28 @@ pub extern "C" fn run_sarsa(
 }
 
 #[no_mangle]
+pub extern "C" fn run_q_learning(
+    episodes: c_int,
+    lambda: c_float,
+    output: *mut c_float,
+    cb: Option<extern "C" fn()>,
+) -> i32 {
+    if !validators::episodes(episodes) {
+        return -1;
+    }
+
+    if !validators::lambda(lambda) {
+        return -1;
+    }
+
+    let mut gpi = shortcuts::run_q_learning(0, lambda);
+
+    run_gpi(&mut gpi, episodes, output, cb);
+
+    0
+}
+
+#[no_mangle]
 pub extern "C" fn run_lfa(
     episodes: c_int,
     lambda: c_float,

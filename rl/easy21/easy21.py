@@ -49,6 +49,10 @@ e21.run_sarsa.argtypes = [ct.c_int, ct.c_float, ct.POINTER(OUTPUT_ARRAY),
                           CGpiCb]
 e21.run_sarsa.restype = ct.c_int
 
+e21.run_q_learning.argtypes = [ct.c_int, ct.c_float, ct.POINTER(OUTPUT_ARRAY),
+                               CGpiCb]
+e21.run_q_learning.restype = ct.c_int
+
 e21.run_lfa.argtypes = [ct.c_int, ct.c_float, ct.c_float, ct.c_float,
                         ct.POINTER(OUTPUT_ARRAY), CGpiCb]
 e21.run_lfa.restype = ct.c_int
@@ -160,6 +164,17 @@ def run_sarsa(episodes: int, lambda_val: float,
     return out.matrix
 
 
+def run_q_learning(episodes: int, lambda_val: float,
+                   cb: GpiCb=None) -> ExpectedRewardMatrix:
+    out = OutputReceiver(cb)
+    result = e21.run_q_learning(episodes, lambda_val, out.array_ref, out.cb)
+
+    if result != 0:
+        raise ValueError(f"run_q_learning failed with result {result}")
+
+    return out.matrix
+
+
 def run_lfa(episodes: int, lambda_val: float, epsilon: float,
             step_size: float, cb: GpiCb=None) -> ExpectedRewardMatrix:
     out = OutputReceiver(cb)
@@ -175,6 +190,7 @@ def run_lfa(episodes: int, lambda_val: float, epsilon: float,
 def run_smoke_tests():
     run_lfa(10, 0.5, 0.05, 0.1)
     run_sarsa(1000, 0.5)
+    run_q_learning(1000, 0.5)
     print("Output of monte carlo w/ 30,000 episodes:\n")
     big = run_monte_carlo(30_000)
     print(big)

@@ -5,6 +5,7 @@ pub mod game;
 pub mod gpi;
 pub mod montecarlo;
 pub mod sarsa;
+pub mod qlearning;
 pub mod lfa;
 pub mod shortcuts;
 pub mod validators;
