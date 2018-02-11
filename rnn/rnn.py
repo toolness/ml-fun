@@ -93,7 +93,7 @@ class RNN:
         return total_loss[0][0]
 
     def calculate_gradient_very_slowly(self, inputs, outputs,
-                                       clip=100.0, epsilon=1e-5):
+                                       epsilon=1e-5):
         gradient = np.zeros(len(self))
         half_epsilon = epsilon / 2.0
         for idx in range(len(self)):
@@ -104,10 +104,6 @@ class RNN:
             loss2 = self.calculate_loss(inputs, outputs)
             self[idx] = orig_val
             grad = (loss2 - loss1) / epsilon
-            if grad > clip:
-                grad = clip
-            elif grad < -clip:
-                grad = -clip
             gradient[idx] = grad
         return gradient
 
