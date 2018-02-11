@@ -11,6 +11,13 @@ def test_sigmoid():
     assert rnn.sigmoid(-100) >= 0
 
 
+def test_logistic_loss():
+    assert np.allclose(rnn.logistic_loss(1.0, 0.9999999999), [0])
+    assert np.allclose(rnn.logistic_loss(0.0, 0.0000000001), [0])
+    assert rnn.logistic_loss(1.0, 0.01) > 1
+    assert rnn.logistic_loss(0.0, 0.99) > 1
+
+
 def test_getitem_and_setitem_work():
     nn = rnn.RNN(n_a=4, n_x=1)
     for i in range(len(nn)):
