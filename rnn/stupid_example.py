@@ -3,11 +3,11 @@ import numpy as np
 import rnn
 
 
-def normshape(arr):
-    return np.array(arr).reshape(-1, 1, 1).astype(np.float)
+def normshape(arr, m=1):
+    return np.array(arr).reshape(-1, 1, m).astype(np.float)
 
 
-def create_stupid_example(size):
+def create_stupid_example(size, m=1):
     '''
     Creates a stupid pair of sequences, each an array of shape
     (size, 1, 1). The first is a random sequence of ones and
@@ -24,14 +24,16 @@ def create_stupid_example(size):
         [0, 0, 0, 0, 1, 0]
     '''
 
-    inputs = np.random.randint(2, size=size)
-    outputs = []
-    last_i = None
-    for i in inputs:
-        output = 1 if i == 1 and last_i == 1 else 0
-        last_i = i
-        outputs.append(output)
-    return (normshape(inputs), normshape(outputs))
+    inputs = np.random.randint(2, size=(size, m))
+    outputs = np.zeros((size, m))
+    for example in range(m):
+        last_val = None
+        for i in range(size):
+            val = inputs[i][example]
+            output = 1 if val == 1 and last_val == 1 else 0
+            last_val = val
+            outputs[i][example] = output
+    return (normshape(inputs, m), normshape(outputs, m))
 
 
 def main(print=print):
@@ -45,11 +47,11 @@ def main(print=print):
     avg_acc = 0.0
 
     for i in range(10000):
-        inputs, outputs = create_stupid_example(9)
+        inputs, outputs = create_stupid_example(9, m=16)
         loss, acc = nn.calculate_loss_and_accuracy(inputs, outputs)
-        avg_loss = 0.8 * avg_loss + 0.2 * loss
-        avg_acc = 0.8 * avg_acc + 0.2 * acc
-        if i % 100 == 0:
+        avg_loss = 0.5 * avg_loss + 0.5 * loss
+        avg_acc = 0.5 * avg_acc + 0.5 * acc
+        if i % 50 == 0:
             print(f"At iteration {i}, average accuracy is {int(avg_acc * 100)}% (loss is {avg_loss}).")
             if avg_acc > 0.99:
                 break

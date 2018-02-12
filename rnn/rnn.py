@@ -61,20 +61,22 @@ class RNN:
         assert self.by.shape == (self.n_y, 1)
 
     def forward_prop(self, x, a_prev=None):
-        if a_prev is None:
-            a_prev = np.zeros((self.n_a, 1))
+        m = x.shape[1]
 
-        assert x.shape == (self.n_x, 1)
-        assert a_prev.shape == (self.n_a, 1)
+        if a_prev is None:
+            a_prev = np.zeros((self.n_a, m))
+
+        assert x.shape == (self.n_x, m)
+        assert a_prev.shape == (self.n_a, m)
 
         a = np.tanh(np.dot(self.waa, a_prev) +
                     np.dot(self.wax, x) + self.ba)
 
-        assert a.shape == (self.n_a, 1)
+        assert a.shape == (self.n_a, m)
 
         y = sigmoid(np.dot(self.wya, a) + self.by)
 
-        assert y.shape == (self.n_y, 1)
+        assert y.shape == (self.n_y, m)
 
         return (y, a)
 
@@ -86,20 +88,21 @@ class RNN:
             yield y
 
     def calculate_loss_and_accuracy(self, inputs, outputs):
-        total_loss = np.array([[0.0]])
+        m = inputs.shape[2]
+        total_loss = np.zeros((1, m))
         num_correct = 0
         for y, pred_y in zip(outputs, self.forward_prop_seq(inputs)):
             total_loss += logistic_loss(y, pred_y)
-            pred_y = 1.0 if pred_y > 0.5 else 0.0
-            if pred_y == y:
-                num_correct += 1.0
-        return total_loss[0][0], num_correct / outputs.size
+            pred_y = (pred_y > 0.5).astype(np.float)
+            num_correct += np.sum((pred_y == y).astype(np.float))
+        return np.sum(total_loss) / m, num_correct / outputs.size
 
     def calculate_loss(self, inputs, outputs):
-        total_loss = np.array([[0.0]])
+        m = inputs.shape[2]
+        total_loss = np.zeros((1, m))
         for y, pred_y in zip(outputs, self.forward_prop_seq(inputs)):
             total_loss += logistic_loss(y, pred_y)
-        return total_loss[0][0]
+        return np.sum(total_loss) / m
 
     def calculate_gradient_very_slowly(self, inputs, outputs,
                                        epsilon=1e-5):
