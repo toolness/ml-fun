@@ -85,11 +85,20 @@ class RNN:
             a_prev = a
             yield y
 
+    def calculate_loss_and_accuracy(self, inputs, outputs):
+        total_loss = np.array([[0.0]])
+        num_correct = 0
+        for y, pred_y in zip(outputs, self.forward_prop_seq(inputs)):
+            total_loss += logistic_loss(y, pred_y)
+            pred_y = 1.0 if pred_y > 0.5 else 0.0
+            if pred_y == y:
+                num_correct += 1.0
+        return total_loss[0][0], num_correct / outputs.size
+
     def calculate_loss(self, inputs, outputs):
         total_loss = np.array([[0.0]])
         for y, pred_y in zip(outputs, self.forward_prop_seq(inputs)):
-            loss = logistic_loss(y, pred_y)
-            total_loss += loss
+            total_loss += logistic_loss(y, pred_y)
         return total_loss[0][0]
 
     def calculate_gradient_very_slowly(self, inputs, outputs,
